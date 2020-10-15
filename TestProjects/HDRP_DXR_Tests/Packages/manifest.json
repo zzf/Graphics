@@ -15,7 +15,7 @@
     "com.unity.test-framework": "1.1.16",
     "com.unity.test-framework.build": "0.0.1-preview.12",
     "com.unity.test-framework.utp-reporter": "1.0.2-preview",
-    "com.unity.testframework.graphics": "ssh://git@github.cds.internal.unity3d.com/unity/com.unity.testframework.graphics.git#test-filters/add-inclusive-filters-2",
+    "com.unity.testframework.graphics": "file:com.unity.testframework.graphics",
     "com.unity.testing.hdrp": "file:../../../com.unity.testing.hdrp",
     "com.unity.textmeshpro": "3.0.1",
     "com.unity.timeline": "1.2.6",

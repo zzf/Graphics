@@ -164,15 +164,14 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.testframework.graphics": {
-      "version": "ssh://git@github.cds.internal.unity3d.com/unity/com.unity.testframework.graphics.git#test-filters/add-inclusive-filters-2",
+      "version": "file:com.unity.testframework.graphics",
       "depth": 0,
-      "source": "git",
+      "source": "embedded",
       "dependencies": {
         "com.unity.xr.management": "3.2.15",
         "com.unity.external.test-protocol": "1.0.0-preview",
         "com.unity.nuget.newtonsoft-json": "2.0.0-preview"
-      },
-      "hash": "3b12d0018cd05b5543d18c685da7198f622898ef"
+      }
     },
     "com.unity.testing.hdrp": {
       "version": "file:../../../com.unity.testing.hdrp",
