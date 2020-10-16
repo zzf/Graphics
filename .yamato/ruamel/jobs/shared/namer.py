@@ -100,8 +100,11 @@ def template_job_id_test(template_id, platform_os, editor_name):
 def template_job_id_test_dependencies(template_id, platform_os, editor_name):
     return f'test_{ template_id }_{ platform_os }_{editor_name}_dependencies'
 
-def template_job_id_pack(template_id):
-    return f'pack_{template_id}'
+def template_job_id_prepack(template_id, editor_name):
+    return f'prepack_{template_id}_{editor_name}'
+
+def template_job_id_pack(template_id, editor_name):
+    return f'pack_{template_id}_{editor_name}'
 
 def template_job_id_test_all(editor_name):
     return f'all_template_ci_{editor_name}'

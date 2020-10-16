@@ -80,6 +80,11 @@ class YMLJob():
     def add_artifacts_templates(self):
         self.yml['artifacts']['packages']['paths'].append(dss(PATH_TEMPLATES)) 
 
+    def add_primed_artifacts_templates(self, packagename):
+        self.yml['artifacts']['primed']['paths'].append(dss(f'{packagename}/Library/Artifacts/**')) 
+        self.yml['artifacts']['primed']['paths'].append(dss(f'{packagename}/Library/ArtifactDB')) 
+        self.yml['artifacts']['primed']['paths'].append(dss(f'{packagename}/Library/SourceAssetDB')) 
+
     def add_artifacts_unity_revision(self): # used by editor
         self.yml['artifacts']['unity_revision.zip']['paths'].append(dss(PATH_UNITY_REVISION)) 
 

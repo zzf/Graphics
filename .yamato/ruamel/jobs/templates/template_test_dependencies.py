@@ -13,7 +13,7 @@ class Template_TestDependenciesJob():
     def get_job_definition(yml, template, platform, editor):
     
         # define dependencies
-        dependencies = [f'{templates_filepath()}#{template_job_id_pack(template["id"])}'] 
+        dependencies = [f'{templates_filepath()}#{template_job_id_pack(template["id"], editor["name"])}'] 
         dependencies.extend([f'{packages_filepath()}#{package_job_id_pack(dep)}' for dep in template["dependencies"]])
         if not editor["editor_pinning"]:
             dependencies.extend([f'{editor_priming_filepath()}#{editor_job_id(editor["name"], platform["os"]) }'])
