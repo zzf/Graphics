@@ -11,7 +11,7 @@ prepack_hdrp_template_trunk:
         flavor: b1.large
     commands:
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 5181ec54d595526303eb2714f480cbc3ee1911bd -c editor --wait --published-only
+      -  unity-downloader-cli -u 37c5ec4c3cb13853f9074c74cbac49a232178bd8 -c editor --wait --published-only
       -  .Editor\Unity.exe -projectPath com.unity.template-hd -batchmode -quit
     artifacts:
         primed:
@@ -30,38 +30,6 @@ pack_hdrp_template_trunk:
       -  upm-ci template pack --project-path com.unity.template-hd
     dependencies:
       -  .yamato/_templates.yml#prepack_hdrp_template_trunk
-    artifacts:
-        packages:
-            paths:
-              -  "upm-ci~/packages/**/*"
-              -  "upm-ci~/templates/**/*"
-prepack_hdrp_template_2020.2:
-    name: Pre-Pack HDRP Template 2020.2
-    agent:
-        type: Unity::VM
-        image: package-ci/win10:stable
-        flavor: b1.large
-    commands:
-      -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 2ea77e477b085e913ac2cdc798fcd655b010f1a2 -c editor --wait --published-only
-      -  .Editor\Unity.exe -projectPath com.unity.template-hd -batchmode -quit
-    artifacts:
-        primed:
-            paths:
-              -  "com.unity.template-hd/Library/Artifacts/**"
-              -  "com.unity.template-hd/Library/ArtifactDB"
-              -  "com.unity.template-hd/Library/SourceAssetDB"
-pack_hdrp_template_2020.2:
-    name: Pack HDRP Template 2020.2
-    agent:
-        type: Unity::VM
-        image: package-ci/win10:stable
-        flavor: b1.large
-    commands:
-      -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-      -  upm-ci template pack --project-path com.unity.template-hd
-    dependencies:
-      -  .yamato/_templates.yml#prepack_hdrp_template_2020.2
     artifacts:
         packages:
             paths:
@@ -107,7 +75,7 @@ prepack_universal_template_trunk:
         flavor: b1.large
     commands:
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 5181ec54d595526303eb2714f480cbc3ee1911bd -c editor --wait --published-only
+      -  unity-downloader-cli -u 37c5ec4c3cb13853f9074c74cbac49a232178bd8 -c editor --wait --published-only
       -  .Editor\Unity.exe -projectPath com.unity.template-universal -batchmode -quit
     artifacts:
         primed:
@@ -126,38 +94,6 @@ pack_universal_template_trunk:
       -  upm-ci template pack --project-path com.unity.template-universal
     dependencies:
       -  .yamato/_templates.yml#prepack_universal_template_trunk
-    artifacts:
-        packages:
-            paths:
-              -  "upm-ci~/packages/**/*"
-              -  "upm-ci~/templates/**/*"
-prepack_universal_template_2020.2:
-    name: Pre-Pack Universal Template 2020.2
-    agent:
-        type: Unity::VM
-        image: package-ci/win10:stable
-        flavor: b1.large
-    commands:
-      -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 2ea77e477b085e913ac2cdc798fcd655b010f1a2 -c editor --wait --published-only
-      -  .Editor\Unity.exe -projectPath com.unity.template-universal -batchmode -quit
-    artifacts:
-        primed:
-            paths:
-              -  "com.unity.template-universal/Library/Artifacts/**"
-              -  "com.unity.template-universal/Library/ArtifactDB"
-              -  "com.unity.template-universal/Library/SourceAssetDB"
-pack_universal_template_2020.2:
-    name: Pack Universal Template 2020.2
-    agent:
-        type: Unity::VM
-        image: package-ci/win10:stable
-        flavor: b1.large
-    commands:
-      -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-      -  upm-ci template pack --project-path com.unity.template-universal
-    dependencies:
-      -  .yamato/_templates.yml#prepack_universal_template_2020.2
     artifacts:
         packages:
             paths:
@@ -211,7 +147,7 @@ test_hdrp_template_windows_trunk:
     commands:
       -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 5181ec54d595526303eb2714f480cbc3ee1911bd -c editor --wait --published-only
+      -  unity-downloader-cli -u 37c5ec4c3cb13853f9074c74cbac49a232178bd8 -c editor --wait --published-only
       -  for /r packages_temp %%x in (*.tgz) do copy %%x upm-ci~\packages
       -  copy upm-ci~\packages\*.tgz .Editor\Data\Resources\PackageManager\Editor
       -  upm-ci template test -u .\.Editor --project-path com.unity.template-hd
@@ -235,7 +171,7 @@ test_hdrp_template_windows_trunk_dependencies:
     commands:
       -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 5181ec54d595526303eb2714f480cbc3ee1911bd -c editor --wait --published-only
+      -  unity-downloader-cli -u 37c5ec4c3cb13853f9074c74cbac49a232178bd8 -c editor --wait --published-only
       -  for /r packages_temp %%x in (*.tgz) do copy %%x upm-ci~\packages
       -  copy upm-ci~\packages\*.tgz .Editor\Data\Resources\PackageManager\Editor
       -  upm-ci template test -u .\.Editor --type updated-dependencies-tests --project-path com.unity.template-hd
@@ -257,7 +193,7 @@ test_universal_template_windows_trunk:
     commands:
       -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 5181ec54d595526303eb2714f480cbc3ee1911bd -c editor --wait --published-only
+      -  unity-downloader-cli -u 37c5ec4c3cb13853f9074c74cbac49a232178bd8 -c editor --wait --published-only
       -  for /r packages_temp %%x in (*.tgz) do copy %%x upm-ci~\packages
       -  copy upm-ci~\packages\*.tgz .Editor\Data\Resources\PackageManager\Editor
       -  upm-ci template test -u .\.Editor --project-path com.unity.template-universal
@@ -279,7 +215,7 @@ test_universal_template_windows_trunk_dependencies:
     commands:
       -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 5181ec54d595526303eb2714f480cbc3ee1911bd -c editor --wait --published-only
+      -  unity-downloader-cli -u 37c5ec4c3cb13853f9074c74cbac49a232178bd8 -c editor --wait --published-only
       -  for /r packages_temp %%x in (*.tgz) do copy %%x upm-ci~\packages
       -  copy upm-ci~\packages\*.tgz .Editor\Data\Resources\PackageManager\Editor
       -  upm-ci template test -u .\.Editor --type updated-dependencies-tests --project-path com.unity.template-universal
@@ -303,7 +239,7 @@ test_hdrp_template_macos_trunk:
     commands:
       -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 5181ec54d595526303eb2714f480cbc3ee1911bd -c editor --wait --published-only
+      -  unity-downloader-cli -u 37c5ec4c3cb13853f9074c74cbac49a232178bd8 -c editor --wait --published-only
       -  cp packages_temp/**/upm-ci~/packages/*.tgz upm-ci~/packages
       -  cp ./upm-ci~/packages/*.tgz ./.Editor/Unity.app/Contents/Resources/PackageManager/Editor
       -  upm-ci template test -u $(pwd)/.Editor/Unity.app/Contents/MacOS/Unity --project-path com.unity.template-hd
@@ -327,7 +263,7 @@ test_hdrp_template_macos_trunk_dependencies:
     commands:
       -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 5181ec54d595526303eb2714f480cbc3ee1911bd -c editor --wait --published-only
+      -  unity-downloader-cli -u 37c5ec4c3cb13853f9074c74cbac49a232178bd8 -c editor --wait --published-only
       -  cp packages_temp/**/upm-ci~/packages/*.tgz upm-ci~/packages
       -  cp ./upm-ci~/packages/*.tgz ./.Editor/Unity.app/Contents/Resources/PackageManager/Editor
       -  upm-ci template test -u $(pwd)/.Editor/Unity.app/Contents/MacOS/Unity --type updated-dependencies-tests --project-path com.unity.template-hd
@@ -349,7 +285,7 @@ test_universal_template_macos_trunk:
     commands:
       -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 5181ec54d595526303eb2714f480cbc3ee1911bd -c editor --wait --published-only
+      -  unity-downloader-cli -u 37c5ec4c3cb13853f9074c74cbac49a232178bd8 -c editor --wait --published-only
       -  cp packages_temp/**/upm-ci~/packages/*.tgz upm-ci~/packages
       -  cp ./upm-ci~/packages/*.tgz ./.Editor/Unity.app/Contents/Resources/PackageManager/Editor
       -  upm-ci template test -u $(pwd)/.Editor/Unity.app/Contents/MacOS/Unity --project-path com.unity.template-universal
@@ -371,191 +307,7 @@ test_universal_template_macos_trunk_dependencies:
     commands:
       -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
       -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 5181ec54d595526303eb2714f480cbc3ee1911bd -c editor --wait --published-only
-      -  cp packages_temp/**/upm-ci~/packages/*.tgz upm-ci~/packages
-      -  cp ./upm-ci~/packages/*.tgz ./.Editor/Unity.app/Contents/Resources/PackageManager/Editor
-      -  upm-ci template test -u $(pwd)/.Editor/Unity.app/Contents/MacOS/Unity --type updated-dependencies-tests --project-path com.unity.template-universal
-    artifacts:
-        logs:
-            paths:
-              -  "**/test-results/**"
-test_hdrp_template_windows_2020.2:
-    name: Test HDRP Template Win 2020.2
-    agent:
-        type: Unity::VM
-        image: package-ci/win10:stable
-        flavor: b1.large
-    dependencies:
-      -  .yamato/_templates.yml#pack_hdrp_template_2020.2
-      -  .yamato/_packages.yml#pack_core
-      -  .yamato/_packages.yml#pack_shadergraph
-      -  .yamato/_packages.yml#pack_vfx
-      -  .yamato/_packages.yml#pack_config
-      -  .yamato/_packages.yml#pack_hdrp
-    commands:
-      -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-      -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 2ea77e477b085e913ac2cdc798fcd655b010f1a2 -c editor --wait --published-only
-      -  for /r packages_temp %%x in (*.tgz) do copy %%x upm-ci~\packages
-      -  copy upm-ci~\packages\*.tgz .Editor\Data\Resources\PackageManager\Editor
-      -  upm-ci template test -u .\.Editor --project-path com.unity.template-hd
-    artifacts:
-        logs:
-            paths:
-              -  "**/test-results/**"
-test_hdrp_template_windows_2020.2_dependencies:
-    name: Test HDRP Template Win 2020.2 - dependencies
-    agent:
-        type: Unity::VM
-        image: package-ci/win10:stable
-        flavor: b1.large
-    dependencies:
-      -  .yamato/_templates.yml#pack_hdrp_template_2020.2
-      -  .yamato/_packages.yml#pack_core
-      -  .yamato/_packages.yml#pack_shadergraph
-      -  .yamato/_packages.yml#pack_vfx
-      -  .yamato/_packages.yml#pack_config
-      -  .yamato/_packages.yml#pack_hdrp
-    commands:
-      -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-      -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 2ea77e477b085e913ac2cdc798fcd655b010f1a2 -c editor --wait --published-only
-      -  for /r packages_temp %%x in (*.tgz) do copy %%x upm-ci~\packages
-      -  copy upm-ci~\packages\*.tgz .Editor\Data\Resources\PackageManager\Editor
-      -  upm-ci template test -u .\.Editor --type updated-dependencies-tests --project-path com.unity.template-hd
-    artifacts:
-        logs:
-            paths:
-              -  "**/test-results/**"
-test_universal_template_windows_2020.2:
-    name: Test Universal Template Win 2020.2
-    agent:
-        type: Unity::VM
-        image: package-ci/win10:stable
-        flavor: b1.large
-    dependencies:
-      -  .yamato/_templates.yml#pack_universal_template_2020.2
-      -  .yamato/_packages.yml#pack_core
-      -  .yamato/_packages.yml#pack_shadergraph
-      -  .yamato/_packages.yml#pack_universal
-    commands:
-      -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-      -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 2ea77e477b085e913ac2cdc798fcd655b010f1a2 -c editor --wait --published-only
-      -  for /r packages_temp %%x in (*.tgz) do copy %%x upm-ci~\packages
-      -  copy upm-ci~\packages\*.tgz .Editor\Data\Resources\PackageManager\Editor
-      -  upm-ci template test -u .\.Editor --project-path com.unity.template-universal
-    artifacts:
-        logs:
-            paths:
-              -  "**/test-results/**"
-test_universal_template_windows_2020.2_dependencies:
-    name: Test Universal Template Win 2020.2 - dependencies
-    agent:
-        type: Unity::VM
-        image: package-ci/win10:stable
-        flavor: b1.large
-    dependencies:
-      -  .yamato/_templates.yml#pack_universal_template_2020.2
-      -  .yamato/_packages.yml#pack_core
-      -  .yamato/_packages.yml#pack_shadergraph
-      -  .yamato/_packages.yml#pack_universal
-    commands:
-      -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-      -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 2ea77e477b085e913ac2cdc798fcd655b010f1a2 -c editor --wait --published-only
-      -  for /r packages_temp %%x in (*.tgz) do copy %%x upm-ci~\packages
-      -  copy upm-ci~\packages\*.tgz .Editor\Data\Resources\PackageManager\Editor
-      -  upm-ci template test -u .\.Editor --type updated-dependencies-tests --project-path com.unity.template-universal
-    artifacts:
-        logs:
-            paths:
-              -  "**/test-results/**"
-test_hdrp_template_macos_2020.2:
-    name: Test HDRP Template OSX 2020.2
-    agent:
-        type: Unity::VM::osx
-        image: package-ci/mac:stable
-        flavor: m1.mac
-    dependencies:
-      -  .yamato/_templates.yml#pack_hdrp_template_2020.2
-      -  .yamato/_packages.yml#pack_core
-      -  .yamato/_packages.yml#pack_shadergraph
-      -  .yamato/_packages.yml#pack_vfx
-      -  .yamato/_packages.yml#pack_config
-      -  .yamato/_packages.yml#pack_hdrp
-    commands:
-      -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-      -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 2ea77e477b085e913ac2cdc798fcd655b010f1a2 -c editor --wait --published-only
-      -  cp packages_temp/**/upm-ci~/packages/*.tgz upm-ci~/packages
-      -  cp ./upm-ci~/packages/*.tgz ./.Editor/Unity.app/Contents/Resources/PackageManager/Editor
-      -  upm-ci template test -u $(pwd)/.Editor/Unity.app/Contents/MacOS/Unity --project-path com.unity.template-hd
-    artifacts:
-        logs:
-            paths:
-              -  "**/test-results/**"
-test_hdrp_template_macos_2020.2_dependencies:
-    name: Test HDRP Template OSX 2020.2 - dependencies
-    agent:
-        type: Unity::VM::osx
-        image: package-ci/mac:stable
-        flavor: m1.mac
-    dependencies:
-      -  .yamato/_templates.yml#pack_hdrp_template_2020.2
-      -  .yamato/_packages.yml#pack_core
-      -  .yamato/_packages.yml#pack_shadergraph
-      -  .yamato/_packages.yml#pack_vfx
-      -  .yamato/_packages.yml#pack_config
-      -  .yamato/_packages.yml#pack_hdrp
-    commands:
-      -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-      -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 2ea77e477b085e913ac2cdc798fcd655b010f1a2 -c editor --wait --published-only
-      -  cp packages_temp/**/upm-ci~/packages/*.tgz upm-ci~/packages
-      -  cp ./upm-ci~/packages/*.tgz ./.Editor/Unity.app/Contents/Resources/PackageManager/Editor
-      -  upm-ci template test -u $(pwd)/.Editor/Unity.app/Contents/MacOS/Unity --type updated-dependencies-tests --project-path com.unity.template-hd
-    artifacts:
-        logs:
-            paths:
-              -  "**/test-results/**"
-test_universal_template_macos_2020.2:
-    name: Test Universal Template OSX 2020.2
-    agent:
-        type: Unity::VM::osx
-        image: package-ci/mac:stable
-        flavor: m1.mac
-    dependencies:
-      -  .yamato/_templates.yml#pack_universal_template_2020.2
-      -  .yamato/_packages.yml#pack_core
-      -  .yamato/_packages.yml#pack_shadergraph
-      -  .yamato/_packages.yml#pack_universal
-    commands:
-      -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-      -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 2ea77e477b085e913ac2cdc798fcd655b010f1a2 -c editor --wait --published-only
-      -  cp packages_temp/**/upm-ci~/packages/*.tgz upm-ci~/packages
-      -  cp ./upm-ci~/packages/*.tgz ./.Editor/Unity.app/Contents/Resources/PackageManager/Editor
-      -  upm-ci template test -u $(pwd)/.Editor/Unity.app/Contents/MacOS/Unity --project-path com.unity.template-universal
-    artifacts:
-        logs:
-            paths:
-              -  "**/test-results/**"
-test_universal_template_macos_2020.2_dependencies:
-    name: Test Universal Template OSX 2020.2 - dependencies
-    agent:
-        type: Unity::VM::osx
-        image: package-ci/mac:stable
-        flavor: m1.mac
-    dependencies:
-      -  .yamato/_templates.yml#pack_universal_template_2020.2
-      -  .yamato/_packages.yml#pack_core
-      -  .yamato/_packages.yml#pack_shadergraph
-      -  .yamato/_packages.yml#pack_universal
-    commands:
-      -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-      -  pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade
-      -  unity-downloader-cli -u 2ea77e477b085e913ac2cdc798fcd655b010f1a2 -c editor --wait --published-only
+      -  unity-downloader-cli -u 37c5ec4c3cb13853f9074c74cbac49a232178bd8 -c editor --wait --published-only
       -  cp packages_temp/**/upm-ci~/packages/*.tgz upm-ci~/packages
       -  cp ./upm-ci~/packages/*.tgz ./.Editor/Unity.app/Contents/Resources/PackageManager/Editor
       -  upm-ci template test -u $(pwd)/.Editor/Unity.app/Contents/MacOS/Unity --type updated-dependencies-tests --project-path com.unity.template-universal
@@ -766,21 +518,6 @@ all_template_ci_trunk:
       -  .yamato/_templates.yml#test_universal_template_windows_trunk
       -  .yamato/_templates.yml#test_hdrp_template_macos_trunk
       -  .yamato/_templates.yml#test_universal_template_macos_trunk
-    commands:
-      -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-      -  upm-ci package izon -t
-      -  upm-ci package izon -d
-all_template_ci_2020.2:
-    name: Pack and test all templates - 2020.2
-    agent:
-        type: Unity::VM
-        image: package-ci/win10:stable
-        flavor: b1.large
-    dependencies:
-      -  .yamato/_templates.yml#test_hdrp_template_windows_2020.2
-      -  .yamato/_templates.yml#test_universal_template_windows_2020.2
-      -  .yamato/_templates.yml#test_hdrp_template_macos_2020.2
-      -  .yamato/_templates.yml#test_universal_template_macos_2020.2
     commands:
       -  npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
       -  upm-ci package izon -t
