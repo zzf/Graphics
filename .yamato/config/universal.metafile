@@ -52,7 +52,7 @@ build_configs:
 #  api_level: NET_4_6
 color_spaces:
   - Linear
-  - gamma
+#  - gamma
 all:
   dependencies:
     - platform: Win
