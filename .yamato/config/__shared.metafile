@@ -105,7 +105,7 @@ test_platforms:
       - [Win_DX12]: --extra-editor-arg="-playergraphicsapi=Direct3D12"
       - [Win_Vulkan, Linux_Vulkan, Android_Vulkan]: --extra-editor-arg="-playergraphicsapi=Vulkan"
       - [Android_OpenGLES3]: --extra-editor-arg="-playergraphicsapi=OpenGLES3"
-      - [Android_OpenGLES3]: --extra-editor-arg="-playergraphicsapi=OpenGLES2"
+      - [Android_OpenGLES2]: --extra-editor-arg="-playergraphicsapi=OpenGLES2"
       - [iPhone_Metal]: --extra-editor-arg="-playergraphicsapi=Metal"
       
       - [Android_OpenGLES3, Android_OpenGLES2, Android_Vulkan]: --architecture=ARM64
