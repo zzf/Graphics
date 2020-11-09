@@ -47,10 +47,10 @@ test_platforms:
       - [Linux_OpenGlCore, Linux_Vulkan]: --platform=StandaloneLinux64
       - [OSX_OpenGlCore, OSX_Metal]: --platform=StandaloneOSX
       - [iPhone_Metal]: --platform=iOS
-      - [Android_OpenGLES3, Android_Vulkan]: --platform=Android
+      - [Android_OpenGLES3, Android_OpenGLES2, Android_Vulkan]: --platform=Android
       
       - [Win_DX11, Win_DX12, Win_Vulkan, Win_, Linux_OpenGlCore, Linux_Vulkan]: --player-load-path=../../players 
-      - [Android_OpenGLES3, Android_Vulkan, iPhone_Metal]: --player-load-path=players 
+      - [Android_OpenGLES3, Android_OpenGLES2, Android_Vulkan, iPhone_Metal]: --player-load-path=players 
       
       - [all]: --artifacts_path=test-results
       - [OSX_Metal]: --artifacts_path=/Users/bokken/Graphics/TestProjects/<PROJECT_FOLDER>/test-results
@@ -59,7 +59,7 @@ test_platforms:
 
       - [OSX_Metal]: --scripting-backend=<SCRIPTING_BACKEND>
      
-      - [Android_OpenGLES3, Android_Vulkan]: --architecture=ARM64
+      - [Android_OpenGLES3, Android_OpenGLES2, Android_Vulkan]: --architecture=ARM64
       - [OSX_Metal]: --testproject=/Users/bokken/Graphics/TestProjects/<PROJECT_FOLDER>
       - [Win_DX11, Win_DX12, Win_Vulkan, Win_, Linux_OpenGlCore, Linux_Vulkan]: --player-connection-ip=auto  
 
@@ -73,39 +73,42 @@ test_platforms:
       - [Linux_OpenGlCore, Linux_Vulkan]: --platform=StandaloneLinux64
       - [OSX_OpenGlCore, OSX_Metal]: --platform=StandaloneOSX
       - [iPhone_Metal]: --platform=iOS
-      - [Android_OpenGLES3, Android_Vulkan]: --platform=Android
+      - [Android_OpenGLES3, Android_OpenGLES2, Android_Vulkan]: --platform=Android
       
       - [all]: --testproject=.
-      - [Android_OpenGLES3, Android_Vulkan]: --testproject=./TestProjects/<PROJECT_FOLDER>
+      - [Android_OpenGLES3, Android_OpenGLES2, Android_Vulkan]: --testproject=./TestProjects/<PROJECT_FOLDER>
       - [iPhone_Metal]: --testproject=TestProjects/<PROJECT_FOLDER>
       
       - [all]: --editor-location=.Editor
-      - [Android_OpenGLES3, Android_Vulkan]: --editor-location=./WindowsEditor
+      - [Android_OpenGLES3, Android_OpenGLES2, Android_Vulkan]: --editor-location=./WindowsEditor
       
       - [all]: --artifacts_path=test-results
       - [OSX_Metal]: --artifacts_path=/Users/bokken/Graphics/TestProjects/<PROJECT_FOLDER>/test-results
       
       - [Win_DX11, Win_DX12, Win_Vulkan, Win_, Linux_OpenGlCore, Linux_Vulkan]: --player-save-path=../../players 
-      - [Android_OpenGLES3, Android_Vulkan, iPhone_Metal]: --player-save-path=players  
+      - [Android_OpenGLES3, Android_OpenGLES2, Android_Vulkan, iPhone_Metal]: --player-save-path=players  
       
       - [all]: --timeout=1200
-      - [Android_OpenGLES3, Android_Vulkan]: --timeout=2700
+      - [Android_OpenGLES3, Android_OpenGLES2, Android_Vulkan]: --timeout=2700
       - [iPhone]: --timeout=1800
 
       ### The method and values live in /com.unity.testframework.graphics/.../Editor/SetupProject.cs
       - [Win_DX11]: --extra-editor-arg="-executemethod" --extra-editor-arg="SetupProject.ApplySettings" --extra-editor-arg="d3d11" --extra-editor-arg="<COLORSPACE>"
       - [Win_DX12]: --extra-editor-arg="-executemethod" --extra-editor-arg="SetupProject.ApplySettings" --extra-editor-arg="d3d12" --extra-editor-arg="<COLORSPACE>"
       - [Win_Vulkan, Linux_Vulkan, Android_Vulkan]: --extra-editor-arg="-executemethod" --extra-editor-arg="SetupProject.ApplySettings" --extra-editor-arg="vulkan" --extra-editor-arg="<COLORSPACE>"
-      - [Android_OpenGLES3]: ---extra-editor-arg="-executemethod" --extra-editor-arg="SetupProject.ApplySettings" --extra-editor-arg="gles3" --extra-editor-arg="<COLORSPACE>"
+      - [Android_OpenGLES3]: --extra-editor-arg="-executemethod" --extra-editor-arg="SetupProject.ApplySettings" --extra-editor-arg="gles3" --extra-editor-arg="<COLORSPACE>"
       - [iPhone_Metal]: --extra-editor-arg="-executemethod" --extra-editor-arg="SetupProject.ApplySettings" --extra-editor-arg="metal" --extra-editor-arg="<COLORSPACE>"
+      # GLES2 does not support Linear color space, so in order to avoid cluttering other jobs with Gamma property (which we dont test) it will be hardcoded here
+      - [Android_OpenGLES2]: --extra-editor-arg="-executemethod" --extra-editor-arg="SetupProject.ApplySettings" --extra-editor-arg="gles2" --extra-editor-arg="Gamma"
       
       - [Win_DX11]: --extra-editor-arg="-playergraphicsapi=Direct3D11"
       - [Win_DX12]: --extra-editor-arg="-playergraphicsapi=Direct3D12"
       - [Win_Vulkan, Linux_Vulkan, Android_Vulkan]: --extra-editor-arg="-playergraphicsapi=Vulkan"
       - [Android_OpenGLES3]: --extra-editor-arg="-playergraphicsapi=OpenGLES3"
+      - [Android_OpenGLES3]: --extra-editor-arg="-playergraphicsapi=OpenGLES2"
       - [iPhone_Metal]: --extra-editor-arg="-playergraphicsapi=Metal"
       
-      - [Android_OpenGLES3, Android_Vulkan]: --architecture=ARM64
+      - [Android_OpenGLES3, Android_OpenGLES2, Android_Vulkan]: --architecture=ARM64
   
   - type: playmode
     utr_flags:
@@ -115,12 +118,12 @@ test_platforms:
       - [all]: --extra-editor-arg="-colorspace=<COLORSPACE>"
       
       - [all]: --testproject=.
-      - [Android_OpenGLES3, Android_Vulkan]: --testproject=./TestProjects/<PROJECT_FOLDER>
+      - [Android_OpenGLES3, Android_OpenGLES2, Android_Vulkan]: --testproject=./TestProjects/<PROJECT_FOLDER>
       - [iPhone_Metal]: --testproject=TestProjects/<PROJECT_FOLDER>
       - [OSX_Metal]: --testproject=/Users/bokken/Graphics/TestProjects/<PROJECT_FOLDER>
       
       - [all]: --editor-location=.Editor
-      - [Android_OpenGLES3, Android_Vulkan]: --editor-location=./WindowsEditor
+      - [Android_OpenGLES3, Android_OpenGLES2, Android_Vulkan]: --editor-location=./WindowsEditor
       - [OSX_Metal]: --editor-location=/Users/bokken/.Editor
       
       - [all]: --artifacts_path=test-results
@@ -140,12 +143,12 @@ test_platforms:
       - [all]: --extra-editor-arg="-colorspace=<COLORSPACE>"
       
       - [all]: --testproject=.
-      - [Android_OpenGLES3, Android_Vulkan]: --testproject=./TestProjects/<PROJECT_FOLDER>
+      - [Android_OpenGLES3, Android_OpenGLES2, Android_Vulkan]: --testproject=./TestProjects/<PROJECT_FOLDER>
       - [iPhone_Metal]: --testproject=TestProjects/<PROJECT_FOLDER>
       - [OSX_Metal]: --testproject=/Users/bokken/Graphics/TestProjects/<PROJECT_FOLDER>
       
       - [all]: --editor-location=.Editor
-      - [Android_OpenGLES3, Android_Vulkan]: --editor-location=./WindowsEditor
+      - [Android_OpenGLES3, Android_OpenGLES2, Android_Vulkan]: --editor-location=./WindowsEditor
       - [OSX_Metal]: --editor-location=/Users/bokken/.Editor
       
       - [all]: --artifacts_path=test-results
