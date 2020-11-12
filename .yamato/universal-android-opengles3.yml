@@ -65,8 +65,8 @@ Build_Universal_Android_OpenGLES3_Standalone_il2cpp_Linear_trunk:
         players:
             paths:
               -  "players/**"
-Universal_Android_OpenGLES3_Standalone_il2cpp_Gamma_trunk:
-    name: Universal on Android_OpenGLES3_Standalone_il2cpp_Gamma on version trunk
+Universal_Android_OpenGLES3_Standalone_il2cpp_gamma_trunk:
+    name: Universal on Android_OpenGLES3_Standalone_il2cpp_gamma on version trunk
     agent:
         type: Unity::mobile::android
         image: mobile/android-execution-r19:stable
@@ -93,10 +93,10 @@ Universal_Android_OpenGLES3_Standalone_il2cpp_Gamma_trunk:
               -  "**/test-results/**"
               -  "TestProjects/UniversalGraphicsTest/Logs/*.log"
     dependencies:
-      -  path: .yamato/universal-android-opengles3.yml#Build_Universal_Android_OpenGLES3_Standalone_il2cpp_Gamma_trunk
+      -  path: .yamato/universal-android-opengles3.yml#Build_Universal_Android_OpenGLES3_Standalone_il2cpp_gamma_trunk
          rerun: on-new-revision
-Build_Universal_Android_OpenGLES3_Standalone_il2cpp_Gamma_trunk:
-    name: Build Universal on Android_OpenGLES3_il2cpp_Gamma_Player on version trunk
+Build_Universal_Android_OpenGLES3_Standalone_il2cpp_gamma_trunk:
+    name: Build Universal on Android_OpenGLES3_il2cpp_gamma_Player on version trunk
     agent:
         type: Unity::VM
         image: mobile/android-execution-r19:stable
@@ -114,7 +114,7 @@ Build_Universal_Android_OpenGLES3_Standalone_il2cpp_Gamma_trunk:
                   set /p GIT_REVISIONDATE=<revdate.tmp
                   echo %GIT_REVISIONDATE%
                   del revdate.tmp
-                  utr --architecture=ARM64 --artifacts_path=test-results --build-only --editor-location=./WindowsEditor --extra-editor-arg="-colorspace=Gamma" --extra-editor-arg="-executemethod" --extra-editor-arg="SetupProject.ApplySettings" --extra-editor-arg="gles3" --extra-editor-arg="Gamma" --extra-editor-arg="-playergraphicsapi=OpenGLES3" --platform=Android --player-save-path=players --scripting-backend=IL2CPP --suite=playmode --testproject=./TestProjects/UniversalGraphicsTest --timeout=2700
+                  utr --architecture=ARM64 --artifacts_path=test-results --build-only --editor-location=./WindowsEditor --extra-editor-arg="-colorspace=gamma" --extra-editor-arg="-executemethod" --extra-editor-arg="SetupProject.ApplySettings" --extra-editor-arg="gles3" --extra-editor-arg="gamma" --extra-editor-arg="-playergraphicsapi=OpenGLES3" --platform=Android --player-save-path=players --scripting-backend=IL2CPP --suite=playmode --testproject=./TestProjects/UniversalGraphicsTest --timeout=2700
     artifacts:
         logs:
             paths:
@@ -188,8 +188,8 @@ Build_Universal_Android_OpenGLES3_Standalone_il2cpp_Linear_CUSTOM-REVISION:
     dependencies:
       -  path: .yamato/_editor_priming.yml#editor:priming:CUSTOM-REVISION:android
          rerun: always
-Universal_Android_OpenGLES3_Standalone_il2cpp_Gamma_CUSTOM-REVISION:
-    name: Universal on Android_OpenGLES3_Standalone_il2cpp_Gamma on version CUSTOM-REVISION
+Universal_Android_OpenGLES3_Standalone_il2cpp_gamma_CUSTOM-REVISION:
+    name: Universal on Android_OpenGLES3_Standalone_il2cpp_gamma on version CUSTOM-REVISION
     agent:
         type: Unity::mobile::android
         image: mobile/android-execution-r19:stable
@@ -219,10 +219,10 @@ Universal_Android_OpenGLES3_Standalone_il2cpp_Gamma_CUSTOM-REVISION:
     dependencies:
       -  path: .yamato/_editor_priming.yml#editor:priming:CUSTOM-REVISION:android
          rerun: always
-      -  path: .yamato/universal-android-opengles3.yml#Build_Universal_Android_OpenGLES3_Standalone_il2cpp_Gamma_CUSTOM-REVISION
+      -  path: .yamato/universal-android-opengles3.yml#Build_Universal_Android_OpenGLES3_Standalone_il2cpp_gamma_CUSTOM-REVISION
          rerun: always
-Build_Universal_Android_OpenGLES3_Standalone_il2cpp_Gamma_CUSTOM-REVISION:
-    name: Build Universal on Android_OpenGLES3_il2cpp_Gamma_Player on version CUSTOM-REVISION
+Build_Universal_Android_OpenGLES3_Standalone_il2cpp_gamma_CUSTOM-REVISION:
+    name: Build Universal on Android_OpenGLES3_il2cpp_gamma_Player on version CUSTOM-REVISION
     agent:
         type: Unity::VM
         image: mobile/android-execution-r19:stable
@@ -241,7 +241,7 @@ Build_Universal_Android_OpenGLES3_Standalone_il2cpp_Gamma_CUSTOM-REVISION:
                   set /p GIT_REVISIONDATE=<revdate.tmp
                   echo %GIT_REVISIONDATE%
                   del revdate.tmp
-                  utr --architecture=ARM64 --artifacts_path=test-results --build-only --editor-location=./WindowsEditor --extra-editor-arg="-colorspace=Gamma" --extra-editor-arg="-executemethod" --extra-editor-arg="SetupProject.ApplySettings" --extra-editor-arg="gles3" --extra-editor-arg="Gamma" --extra-editor-arg="-playergraphicsapi=OpenGLES3" --platform=Android --player-save-path=players --scripting-backend=IL2CPP --suite=playmode --testproject=./TestProjects/UniversalGraphicsTest --timeout=2700
+                  utr --architecture=ARM64 --artifacts_path=test-results --build-only --editor-location=./WindowsEditor --extra-editor-arg="-colorspace=gamma" --extra-editor-arg="-executemethod" --extra-editor-arg="SetupProject.ApplySettings" --extra-editor-arg="gles3" --extra-editor-arg="gamma" --extra-editor-arg="-playergraphicsapi=OpenGLES3" --platform=Android --player-save-path=players --scripting-backend=IL2CPP --suite=playmode --testproject=./TestProjects/UniversalGraphicsTest --timeout=2700
     artifacts:
         logs:
             paths:

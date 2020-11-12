@@ -72,7 +72,7 @@ platforms:
       - name: il2cpp
     color_spaces:
       - Linear
-      - Gamma
+      - gamma
   - name: iPhone
     apis:
       - name: Metal
