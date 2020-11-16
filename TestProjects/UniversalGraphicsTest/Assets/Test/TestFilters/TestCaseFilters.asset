@@ -449,7 +449,7 @@ MonoBehaviour:
     XrSdk: None
     StereoModes: 0
     Reason: 'iOS failure on scene 131 (fogbugz: 1283292)'
-  - FilteredScene: 
+  - FilteredScene: {fileID: 0}
     FilteredScenes:
     - {fileID: 102900000, guid: 770b86964e87d47e4bdbafa425ccd238, type: 3}
     ColorSpace: -1
@@ -458,7 +458,7 @@ MonoBehaviour:
     XrSdk: None
     StereoModes: 0
     Reason: Android GLES2 Terrain shader sampler limit (scene 35)
-  - FilteredScene:
+  - FilteredScene: {fileID: 0}
     FilteredScenes:
     - {fileID: 102900000, guid: 5578c9d8b0329024d8020e3094f70302, type: 3}
     ColorSpace: -1
@@ -467,7 +467,7 @@ MonoBehaviour:
     XrSdk: None
     StereoModes: 0
     Reason: Android GLES2 Terrain shader sampler limit (scene 38)
-  - FilteredScene:
+  - FilteredScene: {fileID: 0}
     FilteredScenes:
     - {fileID: 102900000, guid: 381306730e4f1b141bf8e0e1c35f16e9, type: 3}
     ColorSpace: -1
@@ -485,3 +485,12 @@ MonoBehaviour:
     XrSdk: None
     StereoModes: 0
     Reason: iOS failure on scene
+  - FilteredScene: {fileID: 0}
+    FilteredScenes:
+    - {fileID: 102900000, guid: 2fac616c9e61b45ccb7fcfa4fb18ae60, type: 3}
+    ColorSpace: -1
+    BuildPlatform: 13
+    GraphicsDevice: 8
+    XrSdk: None
+    StereoModes: 0
+    Reason: GLES2 format incompatibility
