@@ -194,8 +194,8 @@ namespace UnityEditor.ShaderGraph.Drawing.Views
         protected void HideWindow()
         {
             this.style.visibility = Visibility.Hidden;
-            this.m_ScrollView.verticalScrollerVisibility = ScrollerVisibility.Hidden;
-            this.m_ScrollView.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            this.m_ScrollView.showVertical = false;
+            this.m_ScrollView.showHorizontal = false;
             contentContainer.Clear();
             contentContainer.MarkDirtyRepaint();
         }
