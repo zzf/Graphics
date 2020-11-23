@@ -511,3 +511,20 @@ MonoBehaviour:
     XrSdk: None
     StereoModes: 0
     Reason: GLES2 LDR texture size is 0
+  - FilteredScene: {fileID: 0}
+    FilteredScenes:
+    - {fileID: 102900000, guid: 9d2d9ca35103040838283b3c356c0250, type: 3}
+    - {fileID: 102900000, guid: 54170d1ce2ca64699a0d82056387d56f, type: 3}
+    - {fileID: 102900000, guid: 245a2b08a4f72437193b06846a5c8e33, type: 3}
+    - {fileID: 102900000, guid: 40c4ce99a7711204d978b31395d890b4, type: 3}
+    - {fileID: 102900000, guid: 74cb351d2fc32de4d812e3f2f08744e7, type: 3}
+    - {fileID: 102900000, guid: 9fc0d4010bbf28b4594072e72b8655ab, type: 3}
+    - {fileID: 102900000, guid: d99ff34133a649145adf85fcdfc11ddb, type: 3}
+    - {fileID: 102900000, guid: 9a39ba2c4ee3d0a4ebb103a52b6030cd, type: 3}
+    - {fileID: 102900000, guid: 69d2953b4a7ccaa468758f8517116950, type: 3}
+    ColorSpace: -1
+    BuildPlatform: 13
+    GraphicsDevice: 8
+    XrSdk: None
+    StereoModes: 0
+    Reason: GLES2 Shadows issue
