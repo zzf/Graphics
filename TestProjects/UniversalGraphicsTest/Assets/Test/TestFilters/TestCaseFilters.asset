@@ -528,3 +528,41 @@ MonoBehaviour:
     XrSdk: None
     StereoModes: 0
     Reason: GLES2 Shadows issue
+  - FilteredScene: {fileID: 0}
+    FilteredScenes:
+    - {fileID: 102900000, guid: 99da9ba2c3d1f4b1d92f851028bb7d0a, type: 3}
+    - {fileID: 102900000, guid: a27d5eebd041b42dab7ad89ce8249e81, type: 3}
+    - {fileID: 102900000, guid: ffaad23a2c7fc41b48e4e7ab7e9273e4, type: 3}
+    ColorSpace: -1
+    BuildPlatform: 13
+    GraphicsDevice: 8
+    XrSdk: None
+    StereoModes: 0
+    Reason: GLES2 broken mixed lightning
+  - FilteredScene: {fileID: 0}
+    FilteredScenes:
+    - {fileID: 102900000, guid: d66b74ae4e7264d62bdb2c4f56261030, type: 3}
+    ColorSpace: -1
+    BuildPlatform: 13
+    GraphicsDevice: 8
+    XrSdk: None
+    StereoModes: 0
+    Reason: GLES2 broken Depth shader
+  - FilteredScene: {fileID: 0}
+    FilteredScenes:
+    - {fileID: 102900000, guid: 362b9a0c21a9b4e798504044c7604e80, type: 3}
+    ColorSpace: -1
+    BuildPlatform: 13
+    GraphicsDevice: 8
+    XrSdk: None
+    StereoModes: 0
+    Reason: No smoothness on lights on GLES2
+  - FilteredScene: {fileID: 0}
+    FilteredScenes:
+    - {fileID: 102900000, guid: c7b61419ee9382545afe530714fda0c2, type: 3}
+    ColorSpace: -1
+    BuildPlatform: 13
+    GraphicsDevice: 8
+    XrSdk: None
+    StereoModes: 0
+    Reason: Camera to RT incorrect on GLES2
