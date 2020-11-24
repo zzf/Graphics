@@ -522,6 +522,7 @@ MonoBehaviour:
     - {fileID: 102900000, guid: d99ff34133a649145adf85fcdfc11ddb, type: 3}
     - {fileID: 102900000, guid: 9a39ba2c4ee3d0a4ebb103a52b6030cd, type: 3}
     - {fileID: 102900000, guid: 69d2953b4a7ccaa468758f8517116950, type: 3}
+    - {fileID: 102900000, guid: 137382e53d5a3714088dc0496a166199, type: 3}
     ColorSpace: -1
     BuildPlatform: 13
     GraphicsDevice: 8
@@ -566,3 +567,30 @@ MonoBehaviour:
     XrSdk: None
     StereoModes: 0
     Reason: Camera to RT incorrect on GLES2
+  - FilteredScene: {fileID: 0}
+    FilteredScenes:
+    - {fileID: 102900000, guid: 8d65e7263d49aea4dad06fbbe0b9f438, type: 3}
+    ColorSpace: -1
+    BuildPlatform: 13
+    GraphicsDevice: 8
+    XrSdk: None
+    StereoModes: 0
+    Reason: 008 - some lights are missing
+  - FilteredScene: {fileID: 0}
+    FilteredScenes:
+    - {fileID: 102900000, guid: 716466bc92f8e4eeeb3c138524b04021, type: 3}
+    ColorSpace: -1
+    BuildPlatform: 13
+    GraphicsDevice: 8
+    XrSdk: None
+    StereoModes: 0
+    Reason: 130 - quad is not rendered at all
+  - FilteredScene: {fileID: 0}
+    FilteredScenes:
+    - {fileID: 102900000, guid: 0ad4d46f32f2cc942b4592c2f4368b83, type: 3}
+    ColorSpace: -1
+    BuildPlatform: 13
+    GraphicsDevice: 8
+    XrSdk: None
+    StereoModes: 0
+    Reason: 132 - incorrect results on GLES2
