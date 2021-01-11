@@ -594,3 +594,12 @@ MonoBehaviour:
     XrSdk: None
     StereoModes: 0
     Reason: 132 - incorrect results on GLES2
+  - FilteredScene: {fileID: 0}
+    FilteredScenes:
+    - {fileID: 102900000, guid: ac4701d765fa26b4f83d2fb9ed6b3c08, type: 3}
+    ColorSpace: -1
+    BuildPlatform: 13
+    GraphicsDevice: 8
+    XrSdk: None
+    StereoModes: 0
+    Reason: 131 - Parallax maping throws error
