@@ -6,6 +6,8 @@ Shader "Hidden/Universal Render Pipeline/ScreenSpaceAmbientOcclusion"
         #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/ImageBasedLighting.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
+        #pragma exclude_renderers gles
+
         struct Attributes
         {
             float4 positionHCS   : POSITION;
