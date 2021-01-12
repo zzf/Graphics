@@ -68,7 +68,7 @@ test_platforms:
 
       # GLES2 has issues with DepthEXT, one of the tests has to be filtered out through UTR testfilter flag
       # Because testfilter flag filters in tests rather than filters them out, this regex filters *in* all tests except for the failing one
-      - [Android_OpenGLES2]: --testfilter="^((?!Renderer2DTests\.BaseRendererUsesDepthAttachmentOfColorTextureIfNoDepthTextureCreated).)*$"
+      - [Android_OpenGLES2]: --testfilter="!Renderer2DTests.BaseRendererUsesDepthAttachmentOfColorTextureIfNoDepthTextureCreated"
 
     utr_flags_build:
       - [all]: --testfilter=%TEST_FILTER% 
