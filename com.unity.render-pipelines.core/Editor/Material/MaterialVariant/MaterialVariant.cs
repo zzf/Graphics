@@ -440,9 +440,10 @@ namespace UnityEditor.Rendering.MaterialVariants
 
         private static bool IsValidRoot(Object root)
         {
-            // We allow to create a MaterialVariant without parent (for parenting later)
-            // DefaultAsset identify the null case
-            return (root is UnityEditor.DefaultAsset) || (EditorUtility.IsPersistent(root) && ((root is Material) || (root is Shader)));
+            return
+                root != null &&
+                EditorUtility.IsPersistent(root) &&
+                ((root is Material) || (root is Shader));
         }
 
         class DoCreateNewMaterialVariant : UnityEditor.ProjectWindowCallback.EndNameEditAction
