@@ -138,9 +138,7 @@ namespace UnityEditor.Rendering.HighDefinition
         {
             for (var i = 0; i < properties.Length; i++)
             {
-                if ((properties[i].flags & (MaterialProperty.PropFlags.HideInInspector | MaterialProperty.PropFlags.PerRendererData)) != 0
-                    || (!HDRenderPipelinePreferences.showLockedProperties && shaderGUI.IsPropertyBlockedInAncestorsForAnyVariant(properties[i]))
-                )
+                if ((properties[i].flags & (MaterialProperty.PropFlags.HideInInspector | MaterialProperty.PropFlags.PerRendererData)) != 0)
                     continue;
 
                 using (CreateOverrideScopeFor(properties[i]))

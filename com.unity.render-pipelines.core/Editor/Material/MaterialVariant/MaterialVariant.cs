@@ -121,19 +121,24 @@ namespace UnityEditor.Rendering.MaterialVariants
             overrides.RemoveAll(modification => modification.propertyPath.StartsWith(propertyName));
         }
 
+        public void ResetAllOverrides()
+        {
+            Object[] targets = new Object[] { material };
+            MaterialProperty[] props = MaterialEditor.GetMaterialProperties(targets);
+            ResetOverrides(props);
+        }
+
         #endregion
 
         #region MaterialVariant Blocks Management
-        public bool IsPropertyBlockedInCurrent(string propertyName)
+        public Object FindObjectLockingProperty(string propertyName)
         {
-            return blocks.Any(b => b == propertyName);
-        }
+            if (blocks.Contains(propertyName))
+                return this;
 
-        public bool IsPropertyBlockedInAncestors(string propertyName)
-        {
             var parent = GetParent();
             if (parent is MaterialVariant matVariant)
-                return matVariant.IsPropertyBlocked(propertyName);
+                return matVariant.FindObjectLockingProperty(propertyName);
 
             /* TODO This is intended to check for locks at the ShaderGraph level, but wasn't working, so I'm commenting it out
              * We'd need to find a way to store those locks that doesn't depend on the specific RP anyway
@@ -145,12 +150,7 @@ namespace UnityEditor.Rendering.MaterialVariants
             }
             */
 
-            return false;
-        }
-
-        public bool IsPropertyBlocked(string propertyName)
-        {
-            return IsPropertyBlockedInCurrent(propertyName) || IsPropertyBlockedInAncestors(propertyName);
+            return null;
         }
 
         public void SetPropertyBlocked(string propertyName, bool block)
@@ -174,15 +174,6 @@ namespace UnityEditor.Rendering.MaterialVariants
                 if (!blocks.Remove(prop.name))
                     blocks.Add(prop.name);
             }
-        }
-
-        public IEnumerable<MaterialPropertyModification> TrimOverridesList(IEnumerable<MaterialPropertyModification> overrides)
-        {
-            var parent = GetParent();
-            if (parent is MaterialVariant matVariant)
-                return overrides.Where(mpm => matVariant.IsPropertyBlocked(mpm.key));
-
-            return overrides;
         }
 
         #endregion

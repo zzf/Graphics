@@ -31,11 +31,6 @@ namespace UnityEditor.Rendering
             targets = materialEditor.targets;
         }
 
-        public bool IsPropertyBlockedInAncestorsForAnyVariant(MaterialProperty property)
-        {
-            return variants != null && variants.Any(o => o.IsPropertyBlockedInAncestors(property.name));
-        }
-
         public MaterialPropertyScope CreateOverrideScopeFor(MaterialProperty property, bool forceMode = false)
             => CreateOverrideScopeFor(new MaterialProperty[] { property }, forceMode);
 
