@@ -64,6 +64,16 @@ namespace UnityEditor.Rendering.MaterialVariants
             blocks.Clear();
         }
 
+        public bool DescendsFrom(MaterialVariant ancestor)
+        {
+            MaterialVariant parent = GetParent() as MaterialVariant;
+
+            if (parent == null)
+                return false;
+
+            return (parent == ancestor) || parent.DescendsFrom(ancestor);
+        }
+
         #region MaterialVariant Overrides Management
         public void TrimPreviousOverridesAndAdd(IEnumerable<MaterialPropertyModification> modifications)
         {
@@ -153,29 +163,19 @@ namespace UnityEditor.Rendering.MaterialVariants
             return null;
         }
 
-        public void SetPropertyBlocked(string propertyName, bool block)
+        public void SetPropertyLocked(string propertyName, bool locked)
         {
-            if (!block)
+            if (!locked)
                 blocks.Remove(propertyName);
             else if (!blocks.Contains(propertyName))
                 blocks.Add(propertyName);
         }
 
-        public void TogglePropertyBlocked(string propertyName)
+        public void SetPropertiesLocked(MaterialProperty[] properties, bool locked)
         {
-            if (!blocks.Remove(propertyName))
-                blocks.Add(propertyName);
+            foreach (var mp in properties)
+                SetPropertyLocked(mp.name, locked);
         }
-
-        public void TogglePropertiesBlocked(MaterialProperty[] properties)
-        {
-            foreach (var prop in properties)
-            {
-                if (!blocks.Remove(prop.name))
-                    blocks.Add(prop.name);
-            }
-        }
-
         #endregion
 
         #region MaterialVariant Editor

@@ -144,6 +144,7 @@ namespace UnityEditor.Rendering.MaterialVariants
                 r.width = EditorGUIUtility.labelWidth;
 
                 MaterialVariant[] matVariants = m_Variants;
+                MaterialVariant[] matVariantsWithoutDescendants = m_Variants.Where(mv => !matVariants.Any(candidate => mv.DescendsFrom(candidate))).ToArray();
                 MaterialProperty[] matProperties = m_MaterialProperties;
                 DrawContextMenuAndIcons(m_Variants.Length, numVariantsOverriding, anyVariantIsLockedByAncestors, anyVariantIsLocking, r,
                     () =>
@@ -156,7 +157,7 @@ namespace UnityEditor.Rendering.MaterialVariants
                         }
                     },
                     () => Array.ForEach(matVariants, variant => variant.ResetAllOverrides()),
-                    () => Array.ForEach(matVariants, variant => variant.TogglePropertiesBlocked(matProperties)));
+                    (locked) => Array.ForEach(matVariantsWithoutDescendants, variant => variant.SetPropertiesLocked(matProperties, locked)));
             }
 
             bool hasChanged = m_Force;
@@ -228,7 +229,8 @@ namespace UnityEditor.Rendering.MaterialVariants
             }
         }
 
-        internal static void DrawContextMenuAndIcons(int numVariants, int numVariantsOverriding, bool anyVariantIsLockedByAncestors, bool anyVariantIsLocking, Rect labelRect, GenericMenu.MenuFunction resetFunction, GenericMenu.MenuFunction resetAllFunction, GenericMenu.MenuFunction blockFunction)
+        internal delegate void SetLockedFunction(bool locked);
+        internal static void DrawContextMenuAndIcons(int numVariants, int numVariantsOverriding, bool anyVariantIsLockedByAncestors, bool anyVariantIsLocking, Rect labelRect, GenericMenu.MenuFunction resetFunction, GenericMenu.MenuFunction resetAllFunction, SetLockedFunction lockFunction)
         {
             // Assertion: If anyVariantIsLockedByAncestors is set to true, both anyVariantIsOverriding and anyVariantIsLocking must be false
 
@@ -257,28 +259,38 @@ namespace UnityEditor.Rendering.MaterialVariants
                 // Lock options
                 if (anyVariantIsLockedByAncestors)
                 {
+                    // At least one variant is locked by ancestors, show find locker option, available only if all share the same parent
+                    // TODO
                     menu.AddDisabledItem(findLockerText);
+                }
+                else if (anyVariantIsLocking)
+                {
+                    // At least one variant is locking, show unlock option
+                    menu.AddItem(unlockText, false, () => lockFunction(false));
                 }
                 else
                 {
-                    menu.AddItem(!anyVariantIsLocking ? lockText : unlockText, false, blockFunction);
+                    // No variant is locking, show lock option
+                    menu.AddItem(lockText, false, () => lockFunction(true));
                 }
 
                 menu.ShowAsContext();
             }
 
-            // White bar on overriden properties
+            // White bar on overridden properties
             if (numVariantsOverriding > 0)
             {
                 labelRect.width = 3;
                 EditorGUI.DrawRect(labelRect, Color.white);
             }
 
-            // Locks on locked properties
+            // Show locks on locked properties
             if (anyVariantIsLockedByAncestors || anyVariantIsLocking)
             {
                 labelRect.xMin = 8;
                 labelRect.width = 32;
+
+                // If locked in ancestors, gray out
                 EditorGUI.BeginDisabledGroup(anyVariantIsLockedByAncestors);
                 GUI.Label(labelRect, anyVariantIsLockedByAncestors ? lockAncestorIcon : lockCurrentIcon);
                 EditorGUI.EndDisabledGroup();
@@ -351,10 +363,11 @@ namespace UnityEditor.Rendering.MaterialVariants
             r.width = EditorGUIUtility.labelWidth;
 
             MaterialVariant[] matVariants = m_Variants;
+            MaterialVariant[] matVariantsWithoutDescendants = m_Variants.Where(mv => !matVariants.Any(candidate => mv.DescendsFrom(candidate))).ToArray();
             MaterialPropertyScope.DrawContextMenuAndIcons(m_Variants.Length, numVariantsOverriding, anyVariantIsLockedByAncestors, anyVariantIsLocking, r,
                 () => Array.ForEach(matVariants, variant => variant.ResetOverrideForNonMaterialProperty(k_SerializedPropertyName)),
                 () => Array.ForEach(matVariants, variant => variant.ResetAllOverrides()),
-                () => Array.ForEach(matVariants, variant => variant.TogglePropertyBlocked(k_SerializedPropertyName)));
+                (locked) => Array.ForEach(matVariantsWithoutDescendants, variant => variant.SetPropertyLocked(k_SerializedPropertyName, locked)));
 
 
             bool hasChanged = !anyVariantIsLockedByAncestors && EditorGUI.EndChangeCheck();
