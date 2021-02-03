@@ -138,6 +138,11 @@ namespace UnityEditor.Rendering.MaterialVariants
             ResetOverrides(props);
         }
 
+        public void ApplyOverridesToMaterial(Material material)
+        {
+            MaterialPropertyModification.ApplyPropertyModificationsToMaterial(material, overrides);
+        }
+
         #endregion
 
         #region MaterialVariant Blocks Management

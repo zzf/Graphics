@@ -17,7 +17,9 @@ namespace UnityEditor.Rendering.MaterialVariants
         static GUIContent lockAncestorIcon = new GUIContent(EditorGUIUtility.IconContent("AssemblyLock").image, "Property is locked by an ancestor");
         static GUIContent lockText = new GUIContent("Lock in Children");
         static GUIContent unlockText = new GUIContent("Unlock");
-        static GUIContent findLockerText = new GUIContent("See Locked Property");
+        static GUIContent findLockerText = new GUIContent("Show locked property");
+
+        static string pushAncestorText = "Apply to {0}";
 
 
         static bool insidePropertyScope = false;
@@ -146,7 +148,92 @@ namespace UnityEditor.Rendering.MaterialVariants
                 MaterialVariant[] matVariants = m_Variants;
                 MaterialVariant[] matVariantsWithoutDescendants = m_Variants.Where(mv => !matVariants.Any(candidate => mv.DescendsFrom(candidate))).ToArray();
                 MaterialProperty[] matProperties = m_MaterialProperties;
-                DrawContextMenuAndIcons(m_Variants.Length, numVariantsOverriding, anyVariantIsLockedByAncestors, anyVariantIsLocking, r,
+
+
+                // These actions are only available if all variants have the same MaterialVariant parent
+                GenericMenu.MenuFunction showLocker = null;
+                List<KeyValuePair<string, GenericMenu.MenuFunction>> pushAncestor = null;
+                var parents = m_Variants.Select(mv => mv.GetParent() as MaterialVariant).Where(p => p != null).Distinct(); // TODO This should check SGs too when we add SG locks
+                if (parents.Count() == 1)
+                {
+                    MaterialVariant commonParent = parents.First();
+
+                    // Menu action to ping the ancestor that is locking the property
+                    if (anyVariantIsLockedByAncestors)
+                    {
+                        // Assertion: All variants have the same parent, so the ancestor locking the property should be the same
+                        Object[] lockers = m_ObjectsLockingProperties[m_Variants[0]];
+                        if (lockers != null && lockers.Length > 0 && lockers[0] is MaterialVariant ancestorLockingProperty)
+                        {
+                            showLocker = () => { EditorGUIUtility.PingObject(ancestorLockingProperty.material); };
+                        }
+                    }
+
+                    // Menu action to push an override to an ancestor (only available if all variants are overriding to the same value)
+                    if (numVariantsOverriding > 0 && matProperties.All(mp => !mp.hasMixedValue))
+                    {
+                        // Create a menu entry for each ancestor that is a MaterialVariant
+                        pushAncestor = new List<KeyValuePair<string, GenericMenu.MenuFunction>>();
+
+                        // Need to record the chain from the variants to each ancestor so, after pushing the value to it,
+                        // the algorithm can follow the reverse path, back to the variants
+                        IEnumerable<MaterialVariant> hierarchyStack = new MaterialVariant[0];
+                        MaterialVariant currentAncestor = commonParent;
+                        while (currentAncestor != null)
+                        {
+                            // Add the ancestor to the queue
+                            hierarchyStack = hierarchyStack.Concat(new[] { currentAncestor });
+
+                            // Copy the queue for this ancestor's action (in reverse order)
+                            MaterialVariant[] currentStack = hierarchyStack.Reverse().ToArray();
+
+                            // Create the action
+                            pushAncestor.Add(new KeyValuePair<string, GenericMenu.MenuFunction>(currentAncestor.material.name,
+                                () =>
+                                {
+                                    // Prepare the list of changes to push
+                                    IEnumerable<MaterialPropertyModification> changes = new MaterialPropertyModification[0];
+                                    foreach (var materialProperty in matProperties)
+                                        changes = changes.Concat(MaterialPropertyModification.CreateMaterialPropertyModifications(materialProperty));
+
+                                    // TODO Undo
+
+                                    // Add the changes as overrides to the ancestor and apply them to its material
+                                    MaterialVariant top = currentStack[0];
+                                    top.TrimPreviousOverridesAndAdd(changes);
+                                    top.ApplyOverridesToMaterial(top.material);
+
+                                    // Follow the inheritance chain back to the variants
+                                    MaterialVariant previous = top;
+                                    for (int i = 1; i < currentStack.Length; i++)
+                                    {                                    
+                                        MaterialVariant ancestor = currentStack[i];
+
+                                        // Reset the overrides of the current ancestor
+                                        ancestor.ResetOverrides(matProperties);
+
+                                        // Now, make the previous ancestor (this ancestor's parent) propagate its values to the current one
+                                        MaterialVariant.UpdateHierarchy(previous.GUID, matProperties);
+
+                                        previous = ancestor;
+                                    }
+
+                                    // Reset the overrides of all variants
+                                    foreach (MaterialVariant variant in matVariants)
+                                    {
+                                        variant.ResetOverrides(matProperties);
+                                    }
+
+                                    // Make the last ancestor (the variants' common parent) propagate its values to all variants
+                                    MaterialVariant.UpdateHierarchy(previous.GUID, matProperties);
+                                }));
+
+                            currentAncestor = currentAncestor.GetParent() as MaterialVariant;
+                        }
+                    }
+                }
+
+                DrawContextMenuAndIcons(m_Variants.Length > 1, numVariantsOverriding, anyVariantIsLockedByAncestors, anyVariantIsLocking, r,
                     () =>
                     {
                         MaterialVariant.RecordObjectsUndo(matVariants, matProperties);
@@ -157,7 +244,9 @@ namespace UnityEditor.Rendering.MaterialVariants
                         }
                     },
                     () => Array.ForEach(matVariants, variant => variant.ResetAllOverrides()),
-                    (locked) => Array.ForEach(matVariantsWithoutDescendants, variant => variant.SetPropertiesLocked(matProperties, locked)));
+                    (locked) => Array.ForEach(matVariantsWithoutDescendants, variant => variant.SetPropertiesLocked(matProperties, locked)),
+                    showLocker,
+                    pushAncestor);
             }
 
             bool hasChanged = m_Force;
@@ -230,7 +319,7 @@ namespace UnityEditor.Rendering.MaterialVariants
         }
 
         internal delegate void SetLockedFunction(bool locked);
-        internal static void DrawContextMenuAndIcons(int numVariants, int numVariantsOverriding, bool anyVariantIsLockedByAncestors, bool anyVariantIsLocking, Rect labelRect, GenericMenu.MenuFunction resetFunction, GenericMenu.MenuFunction resetAllFunction, SetLockedFunction lockFunction)
+        internal static void DrawContextMenuAndIcons(bool multiediting, int numVariantsOverriding, bool anyVariantIsLockedByAncestors, bool anyVariantIsLocking, Rect labelRect, GenericMenu.MenuFunction resetFunction, GenericMenu.MenuFunction resetAllFunction, SetLockedFunction lockFunction, GenericMenu.MenuFunction showLockerFunction, List<KeyValuePair<string, GenericMenu.MenuFunction>> pushAncestorFunctions)
         {
             // Assertion: If anyVariantIsLockedByAncestors is set to true, both anyVariantIsOverriding and anyVariantIsLocking must be false
 
@@ -243,7 +332,7 @@ namespace UnityEditor.Rendering.MaterialVariants
                 if (numVariantsOverriding > 0)
                 {
                     // Single material
-                    if (numVariants == 1)
+                    if (!multiediting)
                     {
                         menu.AddItem(revertSingleText, false, resetFunction);
                         menu.AddItem(revertAllText, false, resetAllFunction);
@@ -260,8 +349,14 @@ namespace UnityEditor.Rendering.MaterialVariants
                 if (anyVariantIsLockedByAncestors)
                 {
                     // At least one variant is locked by ancestors, show find locker option, available only if all share the same parent
-                    // TODO
-                    menu.AddDisabledItem(findLockerText);
+                    if (showLockerFunction != null)
+                    {
+                        menu.AddItem(findLockerText, false, showLockerFunction);
+                    }
+                    else
+                    {
+                        menu.AddDisabledItem(findLockerText);
+                    }
                 }
                 else if (anyVariantIsLocking)
                 {
@@ -272,6 +367,17 @@ namespace UnityEditor.Rendering.MaterialVariants
                 {
                     // No variant is locking, show lock option
                     menu.AddItem(lockText, false, () => lockFunction(true));
+                }
+
+                // Push functions
+                if (numVariantsOverriding > 0 && pushAncestorFunctions != null)
+                {
+                    menu.AddSeparator("");
+                    foreach(var ancestor in pushAncestorFunctions)
+                    {
+                        GUIContent option = new GUIContent(string.Format(pushAncestorText, ancestor.Key));
+                        menu.AddItem(option, false, ancestor.Value);
+                    }
                 }
 
                 menu.ShowAsContext();
@@ -319,9 +425,12 @@ namespace UnityEditor.Rendering.MaterialVariants
         {
             m_Variants = variants;
             m_ObjectLockingProperty = new Dictionary<MaterialVariant, Object>();
-            foreach (var matVariant in m_Variants)
+            if (m_Variants != null)
             {
-                m_ObjectLockingProperty[matVariant] = matVariant.FindObjectLockingProperty(k_SerializedPropertyName);
+                foreach (var matVariant in m_Variants)
+                {
+                    m_ObjectLockingProperty[matVariant] = matVariant.FindObjectLockingProperty(k_SerializedPropertyName);
+                }
             }
             m_ValueGetter = valueGetter;
 
@@ -364,10 +473,36 @@ namespace UnityEditor.Rendering.MaterialVariants
 
             MaterialVariant[] matVariants = m_Variants;
             MaterialVariant[] matVariantsWithoutDescendants = m_Variants.Where(mv => !matVariants.Any(candidate => mv.DescendsFrom(candidate))).ToArray();
-            MaterialPropertyScope.DrawContextMenuAndIcons(m_Variants.Length, numVariantsOverriding, anyVariantIsLockedByAncestors, anyVariantIsLocking, r,
+
+            // This actions is only available if all variants have the same MaterialVariant parent
+            GenericMenu.MenuFunction showLocker = null;
+            List<KeyValuePair<string, GenericMenu.MenuFunction>> pushAncestor = null;
+            var parents = m_Variants.Select(mv => mv.GetParent() as MaterialVariant).Where(p => p != null).Distinct(); // TODO This should check SGs too when we add SG locks
+            if (parents.Count() == 1)
+            {
+                MaterialVariant commonParent = parents.First();
+
+                // Menu action to ping the ancestor that is locking the property
+                if (anyVariantIsLockedByAncestors)
+                {
+                    // Assertion: All variants have the same parent, so the ancestor locking the property should be the same
+                    Object locker = m_ObjectLockingProperty[m_Variants[0]];
+                    if (locker != null && locker is MaterialVariant ancestorLockingProperty)
+                    {
+                        showLocker = () => { EditorGUIUtility.PingObject(ancestorLockingProperty.material); };
+                    }
+                }
+            }
+
+            MaterialPropertyScope.DrawContextMenuAndIcons(
+                m_Variants.Length > 1,
+                numVariantsOverriding, anyVariantIsLockedByAncestors, anyVariantIsLocking,
+                r,
                 () => Array.ForEach(matVariants, variant => variant.ResetOverrideForNonMaterialProperty(k_SerializedPropertyName)),
                 () => Array.ForEach(matVariants, variant => variant.ResetAllOverrides()),
-                (locked) => Array.ForEach(matVariantsWithoutDescendants, variant => variant.SetPropertyLocked(k_SerializedPropertyName, locked)));
+                (locked) => Array.ForEach(matVariantsWithoutDescendants, variant => variant.SetPropertyLocked(k_SerializedPropertyName, locked)),
+                showLocker,
+                null); // Can't push this kind of property to ancestors
 
 
             bool hasChanged = !anyVariantIsLockedByAncestors && EditorGUI.EndChangeCheck();
