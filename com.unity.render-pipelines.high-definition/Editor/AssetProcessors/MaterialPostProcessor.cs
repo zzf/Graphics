@@ -117,82 +117,99 @@ namespace UnityEditor.Rendering.HighDefinition
             s_NeedsSavingAssets = false;
         }
 
+        void OnPreprocessAsset()
+        {
+            if (context.assetPath.ToLowerInvariant().EndsWith(".mat"))
+                OnPreprocessMaterial();
+        }
+
+        void OnPreprocessMaterial()
+        {
+            Material material = null;
+            AssetVersion assetVersion = null;
+            MaterialVariant materialVariant = null;
+            var assets = AssetDatabase.LoadAllAssetsAtPath(context.assetPath);
+            foreach (var subAsset in assets)
+            {
+                if (subAsset is Material)
+                    material = subAsset as Material;
+                else if (subAsset is AssetVersion)
+                    assetVersion = subAsset as AssetVersion;
+                else if (subAsset is MaterialVariant)
+                    materialVariant = subAsset as MaterialVariant;
+            }
+
+            if (!HDShaderUtils.IsHDRPShader(material.shader, upgradable: true))
+                return;
+
+            UpgradeMaterial(material, assetVersion, context.assetPath);
+
+            if (materialVariant && materialVariant.Import(context, material))
+                HDShaderUtils.ResetMaterialKeywords(material);
+
+            if (material.shader.IsShaderGraph())
+            {
+                // Add dependency on shadergraph
+                var shaderPath = AssetDatabase.GetAssetPath(material.shader.GetInstanceID());
+                context.DependsOnSourceAsset(shaderPath);
+            }
+        }
+
+        static void UpgradeMaterial(Material material, AssetVersion assetVersion, string asset)
+        {
+            HDShaderUtils.ShaderID id = HDShaderUtils.GetShaderEnumFromShader(material.shader);
+            var latestVersion = k_Migrations.Length;
+            var wasUpgraded = false;
+
+            //subasset not found
+            if (!assetVersion)
+            {
+                wasUpgraded = true;
+                assetVersion = ScriptableObject.CreateInstance<AssetVersion>();
+                assetVersion.hideFlags = HideFlags.HideInHierarchy | HideFlags.HideInInspector | HideFlags.NotEditable;
+                if (s_CreatedAssets.Contains(asset))
+                {
+                    //just created
+                    assetVersion.version = latestVersion;
+                    s_CreatedAssets.Remove(asset);
+
+                    //[TODO: remove comment once fixed]
+                    //due to FB 1175514, this not work. It is being fixed though.
+                    //delayed call of the following work in some case and cause infinite loop in other cases.
+                    AssetDatabase.AddObjectToAsset(assetVersion, asset);
+
+                    // Init material in case it's used before an inspector window is opened
+                    HDShaderUtils.ResetMaterialKeywords(material);
+                }
+                else
+                {
+                    //asset exist prior migration
+                    assetVersion.version = 0;
+                    AssetDatabase.AddObjectToAsset(assetVersion, asset);
+                }
+            }
+
+            //upgrade
+            while (assetVersion.version < latestVersion)
+            {
+                k_Migrations[assetVersion.version](material, id);
+                assetVersion.version++;
+                wasUpgraded = true;
+            }
+
+            if (wasUpgraded)
+            {
+                EditorUtility.SetDirty(assetVersion);
+                s_ImportedAssetThatNeedSaving.Add(asset);
+                s_NeedsSavingAssets = true;
+            }
+        }
+
         void OnPostprocessMaterial(Material material)
         {
             if (!HDShaderUtils.IsHDRPShader(material.shader, upgradable: true))
                 return;
-
             HDShaderUtils.ResetMaterialKeywords(material);
-        }
-
-        static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
-        {
-            foreach (var asset in importedAssets)
-            {
-                if (!asset.ToLowerInvariant().EndsWith(".mat"))
-                    continue;
-
-                var material = (Material)AssetDatabase.LoadAssetAtPath(asset, typeof(Material));
-                if (!HDShaderUtils.IsHDRPShader(material.shader, upgradable: true))
-                    continue;
-
-                HDShaderUtils.ShaderID id = HDShaderUtils.GetShaderEnumFromShader(material.shader);
-                var latestVersion = k_Migrations.Length;
-                var wasUpgraded = false;
-                var assetVersions = AssetDatabase.LoadAllAssetsAtPath(asset);
-                AssetVersion assetVersion = null;
-                foreach (var subAsset in assetVersions)
-                {
-                    if (subAsset != null && subAsset.GetType() == typeof(AssetVersion))
-                    {
-                        assetVersion = subAsset as AssetVersion;
-                        break;
-                    }
-                }
-
-                //subasset not found
-                if (!assetVersion)
-                {
-                    wasUpgraded = true;
-                    assetVersion = ScriptableObject.CreateInstance<AssetVersion>();
-                    assetVersion.hideFlags = HideFlags.HideInHierarchy | HideFlags.HideInInspector | HideFlags.NotEditable;
-                    if (s_CreatedAssets.Contains(asset))
-                    {
-                        //just created
-                        assetVersion.version = latestVersion;
-                        s_CreatedAssets.Remove(asset);
-
-                        //[TODO: remove comment once fixed]
-                        //due to FB 1175514, this not work. It is being fixed though.
-                        //delayed call of the following work in some case and cause infinite loop in other cases.
-                        AssetDatabase.AddObjectToAsset(assetVersion, asset);
-
-                        // Init material in case it's used before an inspector window is opened
-                        HDShaderUtils.ResetMaterialKeywords(material);
-                    }
-                    else
-                    {
-                        //asset exist prior migration
-                        assetVersion.version = 0;
-                        AssetDatabase.AddObjectToAsset(assetVersion, asset);
-                    }
-                }
-
-                //upgrade
-                while (assetVersion.version < latestVersion)
-                {
-                    k_Migrations[assetVersion.version](material, id);
-                    assetVersion.version++;
-                    wasUpgraded = true;
-                }
-
-                if (wasUpgraded)
-                {
-                    EditorUtility.SetDirty(assetVersion);
-                    s_ImportedAssetThatNeedSaving.Add(asset);
-                    s_NeedsSavingAssets = true;
-                }
-            }
         }
 
         // Note: It is not possible to separate migration step by kind of shader
@@ -281,31 +298,31 @@ namespace UnityEditor.Rendering.HighDefinition
                 {
                     // This was ray tracing opaque, should go back to opaque
                     case 3:
-                    {
-                        renderQueueType = 1;
-                    }
-                    break;
+                        {
+                            renderQueueType = 1;
+                        }
+                        break;
                     // If it was in the transparent range, reduce it by 1
                     case 4:
                     case 5:
                     case 6:
                     case 7:
-                    {
-                        renderQueueType = renderQueueType - 1;
-                    }
-                    break;
+                        {
+                            renderQueueType = renderQueueType - 1;
+                        }
+                        break;
                     // If it was in the ray tracing transparent, should go back to transparent
                     case 8:
-                    {
-                        renderQueueType = renderQueueType - 4;
-                    }
-                    break;
+                        {
+                            renderQueueType = renderQueueType - 4;
+                        }
+                        break;
                     // If it was in overlay should be reduced by 2
                     case 10:
-                    {
-                        renderQueueType = renderQueueType - 2;
-                    }
-                    break;
+                        {
+                            renderQueueType = renderQueueType - 2;
+                        }
+                        break;
                     // background, opaque and AfterPostProcessOpaque are not impacted
                     default:
                         break;
