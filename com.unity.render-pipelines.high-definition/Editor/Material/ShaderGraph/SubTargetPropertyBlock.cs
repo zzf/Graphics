@@ -7,7 +7,6 @@ using UnityEngine.UIElements;
 using UnityEditor.UIElements;
 using UnityEngine;
 using RenderQueueType = UnityEngine.Rendering.HighDefinition.HDRenderQueue.RenderQueueType;
-using System.Linq;
 
 namespace UnityEditor.Rendering.HighDefinition.ShaderGraph
 {
@@ -44,15 +43,12 @@ namespace UnityEditor.Rendering.HighDefinition.ShaderGraph
             BaseField<Data> elem = null;
             BaseField<Enum> elemEnum = null;
 
-            // [TODO] Extract key for this property line
-            string m_Key = "";
-
             switch (getter())
             {
-                case bool b: elem = new LockableBaseField<Toggle, bool>(new Toggle { value = b, tooltip = displayName.tooltip }, m_Key) as BaseField<Data>; break;
-                case int i: elem = new LockableBaseField<IntegerField, int>(new IntegerField { value = i, tooltip = displayName.tooltip }, m_Key) as BaseField<Data>; break;
-                case float f: elem = new LockableBaseField<FloatField, float>(new FloatField { value = f, tooltip = displayName.tooltip }, m_Key) as BaseField<Data>; break;
-                case Enum e: elemEnum = new LockableBaseField<EnumField, Enum>(new EnumField(e) { value = e, tooltip = displayName.tooltip }, m_Key); break;
+                case bool b: elem = new Toggle { value = b, tooltip = displayName.tooltip } as BaseField<Data>; break;
+                case int i: elem = new IntegerField { value = i, tooltip = displayName.tooltip } as BaseField<Data>; break;
+                case float f: elem = new FloatField { value = f, tooltip = displayName.tooltip } as BaseField<Data>; break;
+                case Enum e: elemEnum = new EnumField(e) { value = e, tooltip = displayName.tooltip }; break;
                 default: throw new Exception($"Can't create UI field for type {getter().GetType()}, please add it if it's relevant. If you can't consider using TargetPropertyGUIContext.AddProperty instead.");
             }
 
@@ -66,7 +62,6 @@ namespace UnityEditor.Rendering.HighDefinition.ShaderGraph
                     setter(evt.newValue);
                     onChange();
                 });
-                (elem as ILockable).InitLockPosition();
             }
             else
             {
@@ -78,7 +73,6 @@ namespace UnityEditor.Rendering.HighDefinition.ShaderGraph
                     setter((Data)(object)evt.newValue);
                     onChange();
                 });
-                (elemEnum as ILockable).InitLockPosition();
             }
         }
 
@@ -146,138 +140,5 @@ namespace UnityEditor.Rendering.HighDefinition.ShaderGraph
 
         /// <summary>Warning: this property must have a different value for each property block type!</summary>
         protected abstract int foldoutIndex { get; }
-    }
-
-    internal interface ILockable
-    {
-        void InitLockPosition();
-    }
-
-    internal class LockableBaseField<TBaseField, TValueType> : BaseField<TValueType>, ILockable
-        where TBaseField : BaseField<TValueType>
-    {
-        public new static readonly string ussClassName = "unity-lockable";
-
-        BaseField<TValueType> m_ContainedField;
-        LockArea m_LockArea;
-        readonly string m_Key;
-
-        public LockableBaseField(BaseField<TValueType> containedField, string key)
-            : base(null, null)
-        {
-            m_Key = key;
-            m_ContainedField = containedField;
-            bool lockInitValue = false; // [TODO] should be gathered by testing if m_Locks in metadata have the given m_Key
-            m_LockArea = new LockArea(lockInitValue, RegisterChange);
-
-            Add(m_ContainedField);
-
-            //styling
-            this.Q(className: "unity-base-field__input").style.flexGrow = 0;
-            style.overflow = Overflow.Visible;
-            style.marginLeft = 0;
-            style.marginRight = 0;
-            m_ContainedField.style.flexGrow = 1;
-        }
-
-        public void InitLockPosition()
-        {
-            //HACK to move the lock into the parent container
-            VisualElement lineContainer = this;
-            while (lineContainer != null && lineContainer.name != "container")
-                lineContainer = lineContainer.hierarchy.parent;
-            if (lineContainer == null)
-                lineContainer = this;
-
-            lineContainer.Add(m_LockArea);
-            m_LockArea.style.position = Position.Absolute;
-            m_LockArea.style.left = 0;
-        }
-
-        public new virtual TValueType value
-        {
-            get => m_ContainedField.value;
-            set => m_ContainedField.value = value;
-        }
-
-        public new Label labelElement => m_ContainedField.labelElement;
-
-        public new string label
-        {
-            get => m_ContainedField.label;
-            set => m_ContainedField.label = value;
-        }
-
-        public override void SetValueWithoutNotify(TValueType newValue)
-            => m_ContainedField.SetValueWithoutNotify(newValue);
-
-        void RegisterChange(bool newValue)
-        {
-            // [TODO]
-            // grab m_Locks from metadata
-            // if (newValue)
-            //    m_Locks.Add(m_Key);
-            // else
-            //    m_Locks.Remove(m_Key);
-            // update metadata
-        }
-    }
-
-    class LockArea : Image
-    {
-        public new static readonly string ussClassName = "unity-lock-area";
-
-        bool m_Locked;
-        Action<bool> m_Callback;
-
-        public LockArea(bool initValue, Action<bool> callback) : base()
-        {
-            m_Locked = initValue;
-            m_Callback = callback;
-
-            //styling
-            this.image = EditorGUIUtility.IconContent("AssemblyLock").image;
-            style.height = 15;
-            style.minHeight = 15;
-            style.maxHeight = 15;
-            style.width = 14;
-            style.minWidth = 14;
-            style.maxWidth = 14;
-
-            UpdateDisplay();
-            this.AddManipulator(new ToggleClickManipulator(Toggle));
-        }
-
-        void UpdateDisplay()
-            => style.opacity = m_Locked ? 1f : 0.25f;
-
-        public bool locked => m_Locked;
-
-        public void Toggle()
-        {
-            m_Locked ^= true;
-            UpdateDisplay();
-            m_Callback?.Invoke(m_Locked);
-        }
-
-        class ToggleClickManipulator : Manipulator
-        {
-            Action m_Callback;
-
-            public ToggleClickManipulator(Action callback)
-                => m_Callback = callback;
-
-            protected override void RegisterCallbacksOnTarget()
-                => target.RegisterCallback<MouseDownEvent>(OnMouseDown);
-
-            protected override void UnregisterCallbacksFromTarget()
-                => target.UnregisterCallback<MouseDownEvent>(OnMouseDown);
-
-            void OnMouseDown(MouseDownEvent evt)
-            {
-                m_Callback();
-                evt.StopPropagation();
-            }
-        }
     }
 }
