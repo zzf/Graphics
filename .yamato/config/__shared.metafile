@@ -65,6 +65,9 @@ test_platforms:
       - [Android_OpenGLES3, Android_OpenGLES2, Android_Vulkan]: --platform=Android
       
       - [Android_OpenGLES3, Android_OpenGLES2, Android_Vulkan, iPhone_Metal, Win_DX11, Win_DX12, Win_Vulkan, Win_, Linux_OpenGlCore, Linux_Vulkan]: --player-load-path=players
+      # GLES2 has issues with DepthEXT, one of the tests has to be filtered out through UTR testfilter flag
+      # Because testfilter flag filters in tests rather than filters them out, this regex filters *in* all tests except for the failing one
+      - [Android_OpenGLES2]: --testfilter="!Renderer2DTests.BaseRendererUsesDepthAttachmentOfColorTextureIfNoDepthTextureCreated"
       
       - [all]: --artifacts_path=TestProjects/<PROJECT_FOLDER>/test-results
       - [OSX_Metal]: --artifacts_path=/Users/bokken/Graphics/TestProjects/<PROJECT_FOLDER>/test-results
@@ -87,7 +90,7 @@ test_platforms:
 
       # GLES2 has issues with DepthEXT, one of the tests has to be filtered out through UTR testfilter flag
       # Because testfilter flag filters in tests rather than filters them out, this regex filters *in* all tests except for the failing one
-      - [Android_OpenGLES2]: --testfilter="!Renderer2DTests.BaseRendererUsesDepthAttachmentOfColorTextureIfNoDepthTextureCreated" 
+      - [Android_OpenGLES2]: --testfilter="!Renderer2DTests.BaseRendererUsesDepthAttachmentOfColorTextureIfNoDepthTextureCreated"
       
       - [Win_DX11, Win_DX12, Win_Vulkan, Win_]: --platform=StandaloneWindows64
       - [Linux_OpenGlCore, Linux_Vulkan]: --platform=StandaloneLinux64
@@ -144,6 +147,9 @@ test_platforms:
       - [all]: --scripting-backend=<SCRIPTING_BACKEND> 
       # - [all]: --reruncount=2
       - [all]: --extra-editor-arg="-colorspace=<COLORSPACE>"
+      # GLES2 has issues with DepthEXT, one of the tests has to be filtered out through UTR testfilter flag
+      # Because testfilter flag filters in tests rather than filters them out, this regex filters *in* all tests except for the failing one
+      - [Android_OpenGLES2]: --testfilter="!Renderer2DTests.BaseRendererUsesDepthAttachmentOfColorTextureIfNoDepthTextureCreated"
       
       - [all]: --testproject=./TestProjects/<PROJECT_FOLDER>
       - [OSX_Metal]: --testproject=/Users/bokken/Graphics/TestProjects/<PROJECT_FOLDER>
@@ -176,6 +182,9 @@ test_platforms:
       - [all]: --extra-editor-arg="-colorspace=<COLORSPACE>"
       - [Android_OpenGLES3, Android_Vulkan]: --platform=Android
       - [iPhone_Metal]: --platform=iOS
+      # GLES2 has issues with DepthEXT, one of the tests has to be filtered out through UTR testfilter flag
+      # Because testfilter flag filters in tests rather than filters them out, this regex filters *in* all tests except for the failing one
+      - [Android_OpenGLES2]: --testfilter="!Renderer2DTests.BaseRendererUsesDepthAttachmentOfColorTextureIfNoDepthTextureCreated"
       
       - [all]: --testproject=./TestProjects/<PROJECT_FOLDER>
       - [OSX_Metal]: --testproject=/Users/bokken/Graphics/TestProjects/<PROJECT_FOLDER>
