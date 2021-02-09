@@ -102,6 +102,7 @@ Shader "Universal Render Pipeline/Terrain/Lit"
 
             HLSLPROGRAM
             #pragma target 2.0
+            #pragma exclude_renderers gles
 
             #pragma vertex ShadowPassVertex
             #pragma fragment ShadowPassFragment
@@ -173,6 +174,7 @@ Shader "Universal Render Pipeline/Terrain/Lit"
 
             HLSLPROGRAM
             #pragma target 2.0
+            #pragma exclude_renderers gles
 
             #pragma vertex DepthOnlyVertex
             #pragma fragment DepthOnlyFragment
@@ -195,6 +197,8 @@ Shader "Universal Render Pipeline/Terrain/Lit"
 
             HLSLPROGRAM
             #pragma target 2.0
+            #pragma exclude_renderers gles
+
             #pragma vertex DepthNormalOnlyVertex
             #pragma fragment DepthNormalOnlyFragment
 
@@ -214,6 +218,7 @@ Shader "Universal Render Pipeline/Terrain/Lit"
 
             HLSLPROGRAM
             #pragma target 2.0
+            #pragma exclude_renderers gles
 
             #pragma vertex DepthOnlyVertex
             #pragma fragment DepthOnlyFragment
