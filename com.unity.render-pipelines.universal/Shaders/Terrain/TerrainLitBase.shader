@@ -30,6 +30,7 @@ Shader "Hidden/Universal Render Pipeline/Terrain/Lit (Base Pass)"
 
             HLSLPROGRAM
             #pragma target 2.0
+            #pragma exclude_renderers gles
 
             // -------------------------------------
             // Material Keywords
@@ -77,6 +78,7 @@ Shader "Hidden/Universal Render Pipeline/Terrain/Lit (Base Pass)"
 
             HLSLPROGRAM
             #pragma target 2.0
+            #pragma exclude_renderers gles
 
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
@@ -145,6 +147,7 @@ Shader "Hidden/Universal Render Pipeline/Terrain/Lit (Base Pass)"
 
             HLSLPROGRAM
             #pragma target 2.0
+            #pragma exclude_renderers gles
 
             #pragma vertex DepthOnlyVertex
             #pragma fragment DepthOnlyFragment
@@ -166,6 +169,7 @@ Shader "Hidden/Universal Render Pipeline/Terrain/Lit (Base Pass)"
 
             HLSLPROGRAM
             #pragma target 2.0
+            #pragma exclude_renderers gles
 
             #pragma vertex DepthNormalOnlyVertex
             #pragma fragment DepthNormalOnlyFragment
@@ -190,6 +194,7 @@ Shader "Hidden/Universal Render Pipeline/Terrain/Lit (Base Pass)"
             HLSLPROGRAM
             #pragma vertex TerrainVertexMeta
             #pragma fragment TerrainFragmentMeta
+            #pragma exclude_renderers gles
 
             #define _METALLICSPECGLOSSMAP 1
             #define _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A 1
