@@ -641,6 +641,12 @@ namespace UnityEngine.Rendering.HighDefinition
         /// <param name="disposing">Is disposing.</param>
         protected override void Dispose(bool disposing)
         {
+            vertexAttribute.Dispose();
+            normalAttribute.Dispose();
+            tangentAttribute.Dispose();
+            uv0Attribute.Dispose();
+            indexAttribute.Dispose();
+
             DisposeProbeCameraPool();
 
             UnsetRenderingFeatures();
@@ -1020,6 +1026,40 @@ namespace UnityEngine.Rendering.HighDefinition
 
 #endif
 
+        class AttributeData
+        {
+            public ComputeBuffer globalBuffer;
+
+            public void Dispose()
+            {
+                globalBuffer?.Dispose();
+            }
+
+            public void Upload<T>(List<T> data, int stride) where T : struct
+            {
+                globalBuffer = new ComputeBuffer(data.Count, stride, ComputeBufferType.Default, ComputeBufferMode.Immutable);
+                globalBuffer.SetData(data);
+            }
+        }
+
+        static bool buildMeshData = true;
+        int globalRendererCount;
+        AttributeData vertexAttribute = new AttributeData();
+        AttributeData normalAttribute = new AttributeData();
+        AttributeData tangentAttribute = new AttributeData();
+        AttributeData uv0Attribute = new AttributeData();
+        AttributeData indexAttribute = new AttributeData();
+        HashSet<Material> globalMaterials;
+        Dictionary<Renderer, uint> globalIndexOffset;
+#if UNITY_EDITOR
+        [UnityEditor.MenuItem("Test/Build mesh index stream")]
+        static void RebuildMeshes()
+        {
+            buildMeshData = true;
+        }
+
+#endif
+
         /// <summary>
         /// RenderPipeline Render implementation.
         /// </summary>
@@ -1063,6 +1103,77 @@ namespace UnityEngine.Rendering.HighDefinition
 #else
             BeginFrameRendering(renderContext, cameras);
 #endif
+
+            var renderers = GameObject.FindObjectsOfType<MeshRenderer>();
+            if (buildMeshData || renderers.Length != globalRendererCount)
+            {
+                buildMeshData = false;
+                globalRendererCount = renderers.Length;
+
+                vertexAttribute.Dispose();
+                normalAttribute.Dispose();
+                tangentAttribute.Dispose();
+                uv0Attribute.Dispose();
+                indexAttribute.Dispose();
+
+                globalMaterials = new HashSet<Material>();
+                globalIndexOffset = new Dictionary<Renderer, uint>();
+
+                var meshes = new Dictionary<Mesh, uint>();
+
+                var allIndices = new List<int>();
+                var allVertices = new List<Vector3>();
+                var allNormals = new List<Vector3>();
+                var allTangents = new List<Vector4>();
+                var allUVs = new List<Vector2>();
+
+
+                int curr = 0;
+                var propertyBlock = new MaterialPropertyBlock();
+                foreach (var renderer in renderers)
+                {
+                    var mesh = renderer.GetComponent<MeshFilter>().sharedMesh;
+                    uint indexOffset;
+                    if (!meshes.TryGetValue(mesh, out indexOffset))
+                    {
+                        indexOffset = (uint)allIndices.Count;
+                        meshes.Add(mesh, indexOffset);
+
+                        for (int i = 0; i < mesh.subMeshCount; i++)
+                        {
+                            var indices = mesh.GetIndices(i);
+                            for (int j = 0; j < indices.Length; j++)
+                                allIndices.Add(indices[j] + allVertices.Count);
+                        }
+                        allVertices.AddRange(mesh.vertices);
+                        allNormals.AddRange(mesh.normals);
+                        allTangents.AddRange(mesh.tangents);
+                        allUVs.AddRange(mesh.uv);
+                    }
+
+                    globalIndexOffset.Add(renderer, indexOffset);
+
+                    renderer.GetPropertyBlock(propertyBlock);
+                    propertyBlock.SetInt("_RendererId", curr++);
+                    renderer.SetPropertyBlock(propertyBlock);
+
+                    foreach (var material in renderer.sharedMaterials)
+                    {
+                        if (material == null) continue;
+                        if (globalMaterials.Add(material))
+                            material.SetInt("_MaterialId", globalMaterials.Count - 1);
+                    }
+                }
+
+                if (renderers.Length != 0)
+                {
+                    vertexAttribute.Upload(allVertices, 3 * sizeof(float));
+                    normalAttribute.Upload(allNormals, 3 * sizeof(float));
+                    tangentAttribute.Upload(allTangents, 4 * sizeof(float));
+                    uv0Attribute.Upload(allUVs, 2 * sizeof(float));
+                    indexAttribute.Upload(allIndices, sizeof(int));
+                }
+            }
 
             // Check if we can speed up FrameSettings process by skiping history
             // or go in detail if debug is activated. Done once for all renderer.

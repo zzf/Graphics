@@ -78,6 +78,8 @@ namespace UnityEngine.Rendering.HighDefinition
             public TextureHandle        depthAsColor;
             public TextureHandle        normalBuffer;
             public TextureHandle        motionVectorsBuffer;
+            public TextureHandle        visibilityBuffer;
+            public TextureHandle        materialDepth;
 
             // GBuffer output. Will also contain a reference to the normal buffer (as it is shared between deferred and forward objects)
             public GBufferOutput        gbuffer;
@@ -151,10 +153,10 @@ namespace UnityEngine.Rendering.HighDefinition
             return renderGraph.CreateTexture(decalDesc);
         }
 
-        TextureHandle CreateDepthAsColorBuffer(RenderGraph renderGraph, MSAASamples msaaSamples)
+        TextureHandle CreateDepthAsColorBuffer(RenderGraph renderGraph, MSAASamples msaaSamples, bool bindMS = true)
         {
             return renderGraph.CreateTexture(new TextureDesc(Vector2.one, true, true)
-                { colorFormat = GraphicsFormat.R32_SFloat, clearBuffer = true, clearColor = Color.black, bindTextureMS = true, msaaSamples = msaaSamples, name = "DepthAsColorMSAA" });
+                { colorFormat = GraphicsFormat.R32_SFloat, clearBuffer = true, clearColor = Color.black, bindTextureMS = bindMS, msaaSamples = msaaSamples, name = "DepthAsColorMSAA" });
         }
 
         TextureHandle CreateMotionVectorBuffer(RenderGraph renderGraph, bool clear, MSAASamples msaaSamples)
@@ -203,6 +205,14 @@ namespace UnityEngine.Rendering.HighDefinition
             result.motionVectorsBuffer = motionVectors ? CreateMotionVectorBuffer(renderGraph, msaa, hdCamera.msaaSamples) : renderGraph.defaultResources.blackTextureXR;
             result.depthBuffer = CreateDepthBuffer(renderGraph, hdCamera.clearDepth, hdCamera.msaaSamples);
             result.stencilBuffer = result.depthBuffer;
+            result.visibilityBuffer = renderGraph.CreateTexture(new TextureDesc(Vector2.one, true, true)
+            {
+                bindTextureMS = msaa,
+                msaaSamples = hdCamera.msaaSamples,
+                name = "Visibility Buffer",
+                colorFormat = GraphicsFormat.R32G32_UInt,
+                clearColor = new Color(0.5f, 0.5f, 0.5f)
+            });
 
             RenderXROcclusionMeshes(renderGraph, hdCamera, colorBuffer, result.depthBuffer);
 
@@ -477,6 +487,9 @@ namespace UnityEngine.Rendering.HighDefinition
 
                 output.depthBuffer = builder.UseDepthBuffer(output.depthBuffer, DepthAccess.ReadWrite);
                 int mrtIndex = 0;
+                output.visibilityBuffer = builder.UseColorBuffer(output.visibilityBuffer, mrtIndex++);
+                output.materialDepth = builder.UseColorBuffer(CreateDepthAsColorBuffer(renderGraph, hdCamera.msaaSamples, msaa), mrtIndex++);
+
                 if (msaa)
                     output.depthAsColor = builder.UseColorBuffer(CreateDepthAsColorBuffer(renderGraph, hdCamera.msaaSamples), mrtIndex++);
                 output.normalBuffer = builder.UseColorBuffer(CreateNormalBuffer(renderGraph, hdCamera, hdCamera.msaaSamples), mrtIndex++);

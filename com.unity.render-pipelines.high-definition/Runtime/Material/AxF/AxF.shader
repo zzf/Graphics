@@ -2,6 +2,9 @@ Shader "HDRP/AxF"
 {
     Properties
     {
+        _MaterialId("Material ID", Int) = 0
+        [PerRendererData] _RendererId("Renderer ID", Int) = 0
+
         // Following set of parameters represent the parameters node inside the MaterialGraph.
         // They are use to fill a SurfaceData. With a MaterialGraph this should not exist.
 

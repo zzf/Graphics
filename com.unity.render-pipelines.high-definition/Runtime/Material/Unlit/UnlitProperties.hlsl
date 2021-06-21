@@ -9,6 +9,9 @@ SAMPLER(sampler_EmissiveColorMap);
 
 CBUFFER_START(UnityPerMaterial)
 
+int _MaterialId;
+int _RendererId;
+
 float4  _UnlitColor;
 float4 _UnlitColorMap_ST;
 float4 _UnlitColorMap_TexelSize;

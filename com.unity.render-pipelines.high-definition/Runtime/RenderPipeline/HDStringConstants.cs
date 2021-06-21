@@ -44,6 +44,8 @@ namespace UnityEngine.Rendering.HighDefinition
         public static readonly string s_ShadowCasterStr = "ShadowCaster";
         /// <summary>FullScreen Debug pass name.</summary>
         public static readonly string s_FullScreenDebugStr = "FullScreenDebug";
+        /// <summary>Visibility Color Pass name.</summary>
+        public static readonly string s_VisibilityColorPassStr = "VisibilityColorPass";
         /// <summary>DBuffer Projector pass name.</summary>
         public static readonly string s_DBufferProjectorStr = DecalSystem.s_MaterialDecalPassNames[(int)DecalSystem.MaterialDecalPass.DBufferProjector];
         /// <summary>Decal Projector Forward Emissive pass name.</summary>

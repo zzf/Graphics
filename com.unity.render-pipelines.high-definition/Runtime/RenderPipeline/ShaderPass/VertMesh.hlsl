@@ -1,3 +1,7 @@
+#if SHADERPASS == SHADERPASS_DEPTH_ONLY
+#define VARYINGS_NEED_PRIMITIVEID
+#endif
+
 struct VaryingsToPS
 {
     VaryingsMeshToPS vmesh;

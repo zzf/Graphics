@@ -13,6 +13,13 @@ namespace UnityEngine.Rendering.HighDefinition
         APV = APVConstantBufferRegister.GlobalRegister,
     }
 
+    [GenerateHLSL(needAccessors = false, generateCBuffer = true, constantRegister = (int)ConstantRegister.Global)]
+    unsafe struct PerRendererData
+    {
+        public Matrix4x4 _LocalToWorld;
+        public uint _IndexOffset;
+    }
+
     // We need to keep the number of different constant buffers low.
     // Indeed, those are bound for every single drawcall so if we split things in various CB (lightloop, SSS, Fog, etc)
     // We multiply the number of CB we have to bind per drawcall.

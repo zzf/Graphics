@@ -2,6 +2,9 @@ Shader "HDRP/Unlit"
 {
     Properties
     {
+        _MaterialId("Material ID", Int) = 0
+        [PerRendererData] _RendererId("Renderer ID", Int) = 0
+
         // Be careful, do not change the name here to _Color. It will conflict with the "fake" parameters (see end of properties) required for GI.
         [MainColor] _UnlitColor("Color", Color) = (1,1,1,1)
         [MainTexture] _UnlitColorMap("ColorMap", 2D) = "white" {}

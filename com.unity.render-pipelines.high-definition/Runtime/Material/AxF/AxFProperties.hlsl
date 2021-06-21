@@ -51,6 +51,9 @@ SAMPLER(sampler_SVBRDF_ClearcoatIORMap);
 
 CBUFFER_START(UnityPerMaterial)
 
+    int _MaterialId;
+    int _RendererId;
+
     float4  _MappingMask;
 
     // Texel sizes to help custom LOD calculations:

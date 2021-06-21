@@ -43,26 +43,28 @@ PackedVaryingsToPS VertTesselation(VaryingsToDS input)
 #endif // TESSELLATION_ON
 
 #if defined(WRITE_NORMAL_BUFFER) && defined(WRITE_MSAA_DEPTH)
-#define SV_TARGET_DECAL SV_Target2
+#define SV_TARGET_DECAL SV_Target4
 #elif defined(WRITE_NORMAL_BUFFER) || defined(WRITE_MSAA_DEPTH)
-#define SV_TARGET_DECAL SV_Target1
+#define SV_TARGET_DECAL SV_Target3
 #else
-#define SV_TARGET_DECAL SV_Target0
+#define SV_TARGET_DECAL SV_Target2
 #endif
 
 void Frag(  PackedVaryingsToPS packedInput
             #if defined(SCENESELECTIONPASS) || defined(SCENEPICKINGPASS)
             , out float4 outColor : SV_Target0
             #else
+            , out uint2 visibilityBuffer : SV_Target0
+            , out float materialDepth : SV_Target1
                 #ifdef WRITE_MSAA_DEPTH
                 // We need the depth color as SV_Target0 for alpha to coverage
-                , out float4 depthColor : SV_Target0
+                , out float4 depthColor : SV_Target2
                     #ifdef WRITE_NORMAL_BUFFER
-                    , out float4 outNormalBuffer : SV_Target1
+                    , out float4 outNormalBuffer : SV_Target3
                     #endif
                 #else
                     #ifdef WRITE_NORMAL_BUFFER
-                    , out float4 outNormalBuffer : SV_Target0
+                    , out float4 outNormalBuffer : SV_Target2
                     #endif
                 #endif
 
@@ -79,6 +81,7 @@ void Frag(  PackedVaryingsToPS packedInput
 {
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(packedInput);
     FragInputs input = UnpackVaryingsToFragInputs(packedInput);
+
 
     // input.positionSS is SV_Position
     PositionInputs posInput = GetPositionInput(input.positionSS.xy, _ScreenSize.zw, input.positionSS.z, input.positionSS.w, input.positionRWS);
@@ -104,6 +107,10 @@ void Frag(  PackedVaryingsToPS packedInput
 #elif defined(SCENEPICKINGPASS)
     outColor = _SelectionID;
 #else
+
+    visibilityBuffer.r = (_RendererId << 16) | (input.primitiveID & 0xFFFF);
+    visibilityBuffer.g = packedInput.vmesh.positionCS.z * UINT_MAX;
+    materialDepth = _MaterialId;
 
     // Depth and Alpha to coverage
     #ifdef WRITE_MSAA_DEPTH
