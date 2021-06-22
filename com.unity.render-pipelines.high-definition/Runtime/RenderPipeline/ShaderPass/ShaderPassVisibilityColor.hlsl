@@ -97,7 +97,7 @@ FBarycentrics CalculateTriangleBarycentrics(float2 PixelClip, float4 PointClip0,
 }
 
 #define INTERPOLATE(valA, valB, valC, Barycentrics) (valA + Barycentrics.UVW.y * (valB - valA) + Barycentrics.UVW.z * (valC - valA))
-#define INTERPOLATE_BUFFER(Buf, indices, Barycentrics) INTERPOLATE(Buf[indices.x], Buf[indices.y], Buf[indices.z], Barycentrics);
+#define INTERPOLATE_BUFFER(Buf, indices, Barycentrics) INTERPOLATE(Buf[indices.x], Buf[indices.y], Buf[indices.z], Barycentrics)
 
 FragInputs UnpackVaryingsToFragInputs(Varyings packedInput)
 {

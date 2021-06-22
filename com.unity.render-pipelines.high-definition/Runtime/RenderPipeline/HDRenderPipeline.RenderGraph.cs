@@ -168,7 +168,8 @@ namespace UnityEngine.Rendering.HighDefinition
 
                     ApplyCameraMipBias(hdCamera);
 
-                    RenderForwardOpaque(m_RenderGraph, hdCamera, colorBuffer, lightingBuffers, gpuLightListOutput, prepassOutput.depthBuffer, vtFeedbackBuffer, shadowResult, prepassOutput.dbuffer, cullingResults, prepassOutput);
+                    RenderVisibilityColor(m_RenderGraph, hdCamera, prepassOutput, colorBuffer, lightingBuffers, gpuLightListOutput, vtFeedbackBuffer, shadowResult, cullingResults);
+                    //RenderForwardOpaque(m_RenderGraph, hdCamera, colorBuffer, lightingBuffers, gpuLightListOutput, prepassOutput.depthBuffer, vtFeedbackBuffer, shadowResult, prepassOutput.dbuffer, cullingResults);
 
                     ResetCameraMipBias(hdCamera);
 
@@ -599,12 +600,16 @@ namespace UnityEngine.Rendering.HighDefinition
             public DBufferOutput    dbuffer;
             public LightingBuffers  lightingBuffers;
             public bool             enableDecals;
-            public HDCamera  camera;
+        }
+
+        class VisibilityColorPassData : ForwardOpaquePassData
+        {
+            public HDCamera camera;
+            public HDRenderPipeline pipe;
 
             public TextureHandle visibilityBuffer;
             public TextureHandle materialDepth;
             public ComputeBufferHandle perInstanceData;
-            public HDRenderPipeline pipe;
         }
 
         class ForwardTransparentPassData : ForwardPassData
@@ -712,6 +717,83 @@ namespace UnityEngine.Rendering.HighDefinition
                 DrawTransparentRendererList(renderContext, cmd, frameSettings, rendererList);
         }
 
+        void RenderVisibilityColor(RenderGraph renderGraph,
+            HDCamera hdCamera,
+            PrepassOutput prepass,
+            TextureHandle colorBuffer,
+            in LightingBuffers lightingBuffers,
+            in BuildGPULightListOutput lightLists,
+            TextureHandle vtFeedbackBuffer,
+            ShadowResult shadowResult,
+            CullingResults cullResults)
+        {
+            if (!hdCamera.frameSettings.IsEnabled(FrameSettingsField.OpaqueObjects))
+                return;
+
+            using (var builder = renderGraph.AddRenderPass<VisibilityColorPassData>("Visibility Color", out var passData, ProfilingSampler.Get(HDProfileId.VisibilityColor)))
+            {
+                PrepareCommonForwardPassData(renderGraph, builder, passData, true, hdCamera.frameSettings, PrepareForwardOpaqueRendererList(cullResults, hdCamera), lightLists, shadowResult);
+
+                int index = 0;
+                builder.UseColorBuffer(colorBuffer, index++);
+#if ENABLE_VIRTUALTEXTURES
+                builder.UseColorBuffer(vtFeedbackBuffer, index++);
+#endif
+
+                passData.enableDecals = hdCamera.frameSettings.IsEnabled(FrameSettingsField.Decals);
+                passData.dbuffer = ReadDBuffer(prepass.dbuffer, builder);
+                passData.lightingBuffers = ReadLightingBuffers(lightingBuffers, builder);
+
+                passData.camera = hdCamera;
+
+                passData.pipe = this;
+                passData.visibilityBuffer = builder.ReadTexture(prepass.visibilityBuffer);
+                passData.materialDepth = builder.ReadTexture(prepass.materialDepth);
+                passData.perInstanceData = builder.CreateTransientComputeBuffer(new ComputeBufferDesc(globalRendererCount, 16 * sizeof(float) + sizeof(uint)));
+
+                builder.SetRenderFunc(
+                    (VisibilityColorPassData data, RenderGraphContext context) =>
+                    {
+                        var renderers = GameObject.FindObjectsOfType<MeshRenderer>();
+                        PerRendererData[] localToClip = new PerRendererData[renderers.Length];
+                        Matrix4x4 cameraRelative = Matrix4x4.Translate(-data.camera.mainViewConstants.worldSpaceCameraPos);
+                        for (int i = 0; i < renderers.Length; i++)
+                        {
+                            localToClip[i]._LocalToWorld = cameraRelative * renderers[i].transform.localToWorldMatrix;
+                            localToClip[i]._IndexOffset = data.pipe.globalIndexOffset[renderers[i]];
+                        }
+                        context.cmd.SetBufferData(data.perInstanceData, localToClip);
+
+
+                        BindGlobalLightListBuffers(data, context);
+                        BindDBufferGlobalData(data.dbuffer, context);
+                        BindGlobalLightingBuffers(data.lightingBuffers, context.cmd);
+
+                        context.cmd.SetGlobalBuffer("_GlobalIndexBuffer", data.pipe.indexAttribute.globalBuffer);
+                        context.cmd.SetGlobalBuffer("_GlobalVertexBuffer", data.pipe.vertexAttribute.globalBuffer);
+                        context.cmd.SetGlobalBuffer("_GlobalNormalBuffer", data.pipe.normalAttribute.globalBuffer);
+                        context.cmd.SetGlobalBuffer("_GlobalTangentBuffer", data.pipe.tangentAttribute.globalBuffer);
+                        context.cmd.SetGlobalBuffer("_GlobalUV0Buffer", data.pipe.uv0Attribute.globalBuffer);
+
+                        context.cmd.SetGlobalBuffer("_PerInstanceData", data.perInstanceData);
+                        context.cmd.SetGlobalTexture("_VisibilityBuffer", data.visibilityBuffer);
+                        context.cmd.SetGlobalTexture("_MaterialDepth", data.materialDepth);
+
+                        foreach (var material in data.pipe.globalMaterials)
+                        {
+                            int passIndex = material.FindPass(HDShaderPassNames.s_VisibilityColorPassStr);
+                            if (passIndex != -1)
+                                context.cmd.DrawProcedural(Matrix4x4.identity, material, passIndex, MeshTopology.Triangles, 3, 1);
+                        }
+
+                        // TODO : what will happen with render list? maybe we will not be able to skip this pass because of decal emissive projector, in this case
+                        // we may need to move this part out?
+                        if (data.enableDecals)
+                            DecalSystem.instance.RenderForwardEmissive(context.cmd);
+                    });
+            }
+        }
+
         // Guidelines: In deferred by default there is no opaque in forward. However it is possible to force an opaque material to render in forward
         // by using the pass "ForwardOnly". In this case the .shader should not have "Forward" but only a "ForwardOnly" pass.
         // It must also have a "DepthForwardOnly" and no "DepthOnly" pass as forward material (either deferred or forward only rendering) have always a depth pass.
@@ -727,83 +809,12 @@ namespace UnityEngine.Rendering.HighDefinition
             TextureHandle               vtFeedbackBuffer,
             ShadowResult                shadowResult,
             DBufferOutput               dbuffer,
-            CullingResults              cullResults,
-            PrepassOutput               prepass)
+            CullingResults              cullResults)
         {
             if (!hdCamera.frameSettings.IsEnabled(FrameSettingsField.OpaqueObjects))
                 return;
 
             bool debugDisplay = m_CurrentDebugDisplaySettings.IsDebugDisplayEnabled();
-            bool useVisibility = true;
-            if (useVisibility)
-            {
-                using (var builder = renderGraph.AddRenderPass<ForwardOpaquePassData>("Forward Opaque From Visibility buffer",
-                    out var passData,
-                    ProfilingSampler.Get(HDProfileId.ForwardOpaque)))
-                {
-                    PrepareCommonForwardPassData(renderGraph, builder, passData, true, hdCamera.frameSettings, PrepareForwardOpaqueRendererList(cullResults, hdCamera), lightLists, shadowResult);
-
-                    int index = 0;
-                    builder.UseColorBuffer(colorBuffer, index++);
-#if ENABLE_VIRTUALTEXTURES
-                    builder.UseColorBuffer(vtFeedbackBuffer, index++);
-#endif
-
-                    passData.enableDecals = hdCamera.frameSettings.IsEnabled(FrameSettingsField.Decals);
-                    passData.dbuffer = ReadDBuffer(dbuffer, builder);
-                    passData.lightingBuffers = ReadLightingBuffers(lightingBuffers, builder);
-
-                    passData.camera = hdCamera;
-
-                    if (globalRendererCount == 0)
-                        Debug.Log("globalRendererCount is 0");
-
-                    passData.pipe = this;
-                    passData.visibilityBuffer = builder.ReadTexture(prepass.visibilityBuffer);
-                    passData.materialDepth = builder.ReadTexture(prepass.materialDepth);
-                    passData.perInstanceData = builder.CreateTransientComputeBuffer(new ComputeBufferDesc(globalRendererCount, 16 * sizeof(float) + sizeof(uint)));
-
-                    builder.SetRenderFunc(
-                        (ForwardOpaquePassData data, RenderGraphContext context) =>
-                        {
-                            var renderers = GameObject.FindObjectsOfType<MeshRenderer>();
-                            PerRendererData[] localToClip = new PerRendererData[renderers.Length];
-                            Matrix4x4 cameraRelative = Matrix4x4.Translate(-data.camera.mainViewConstants.worldSpaceCameraPos);
-                            for (int i = 0; i < renderers.Length; i++)
-                            {
-                                localToClip[i]._LocalToWorld = cameraRelative * renderers[i].transform.localToWorldMatrix;
-                                localToClip[i]._IndexOffset = data.pipe.globalIndexOffset[renderers[i]];
-                            }
-                            context.cmd.SetBufferData(data.perInstanceData, localToClip);
-
-
-                            BindGlobalLightListBuffers(data, context);
-                            BindDBufferGlobalData(data.dbuffer, context);
-                            BindGlobalLightingBuffers(data.lightingBuffers, context.cmd);
-
-                            foreach (var material in data.pipe.globalMaterials)
-                            {
-                                context.cmd.SetGlobalBuffer("_GlobalVertexBuffer", data.pipe.vertexAttribute.globalBuffer);
-                                context.cmd.SetGlobalBuffer("_GlobalNormalBuffer", data.pipe.normalAttribute.globalBuffer);
-                                context.cmd.SetGlobalBuffer("_GlobalTangentBuffer", data.pipe.tangentAttribute.globalBuffer);
-                                context.cmd.SetGlobalBuffer("_GlobalIndexBuffer", data.pipe.indexAttribute.globalBuffer);
-                                context.cmd.SetGlobalBuffer("_GlobalUV0Buffer", data.pipe.uv0Attribute.globalBuffer);
-
-                                context.cmd.SetGlobalBuffer("_PerInstanceData", data.perInstanceData);
-                                context.cmd.SetGlobalTexture("_VisibilityBuffer", data.visibilityBuffer);
-                                context.cmd.SetGlobalTexture("_MaterialDepth", data.materialDepth);
-                                context.cmd.DrawProcedural(Matrix4x4.identity, material, material.FindPass(HDShaderPassNames.s_VisibilityColorPassStr), MeshTopology.Triangles, 3, 1);
-                            }
-
-                            // TODO : what will happen with render list? maybe we will not be able to skip this pass because of decal emissive projector, in this case
-                            // we may need to move this part out?
-                            if (data.enableDecals)
-                                DecalSystem.instance.RenderForwardEmissive(context.cmd);
-                        });
-                }
-
-                return;
-            }
 
             using (var builder = renderGraph.AddRenderPass<ForwardOpaquePassData>(debugDisplay ? "Forward (+ Emissive) Opaque  Debug" : "Forward (+ Emissive) Opaque",
                 out var passData,

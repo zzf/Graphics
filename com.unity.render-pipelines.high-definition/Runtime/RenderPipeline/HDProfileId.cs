@@ -43,6 +43,7 @@ namespace UnityEngine.Rendering.HighDefinition
         ForwardOpaqueDebug,
         ForwardTransparent,
         ForwardTransparentDebug,
+        VisibilityColor,
 
         ForwardPreRefraction,
         ForwardPreRefractionDebug,
