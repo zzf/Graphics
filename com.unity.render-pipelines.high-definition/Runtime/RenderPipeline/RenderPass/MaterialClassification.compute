@@ -1,0 +1,52 @@
+#pragma only_renderers d3d11 playstation xboxone xboxseries vulkan metal switch
+#pragma enable_d3d11_debug_symbols
+
+#pragma kernel KMaterialClassification  KERNEL_SIZE=16
+
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
+#include "Packages/com.unity.render-pipelines.high-definition/Runtime/ShaderLibrary/TextureXR.hlsl"
+
+TEXTURE2D_X(_MaterialDepth);
+RW_TEXTURE2D_X(uint2, _MaterialRange);
+
+CBUFFER_START(cb0)
+    float4 _ScreenSize;
+CBUFFER_END
+
+groupshared uint2 gs_tileMinMax;
+
+[numthreads(KERNEL_SIZE, KERNEL_SIZE, 1)]
+void KMaterialClassification(uint2 groupId : SV_GroupID, uint2 groupThreadId : SV_GroupThreadID, uint2 dispatchThreadId : SV_DispatchThreadID, uint threadId : SV_GroupIndex)
+{
+    uint2 pixelUL = groupId * 64 + groupThreadId;
+
+    if (threadId == 0)
+        gs_tileMinMax = uint2(UINT_MAX, 0);
+
+    GroupMemoryBarrierWithGroupSync();
+
+    uint2 threadMinMax = gs_tileMinMax;
+    for (uint BlockY = 0; BlockY < 64u; BlockY += KERNEL_SIZE)
+    {
+        for (uint BlockX = 0; BlockX < 64u; BlockX += KERNEL_SIZE)
+        {
+            uint2 pixelCoord = pixelUL + uint2(BlockX, BlockY);
+            pixelCoord = min(pixelCoord, _ScreenSize.xy);
+
+            uint materialId = _MaterialDepth[COORD_TEXTURE2D_X(pixelCoord)].r;
+            if (materialId != 0)
+            {
+                threadMinMax.x = min(threadMinMax.x, materialId);
+                threadMinMax.y = max(threadMinMax.y, materialId);
+            }
+        }
+    }
+
+    InterlockedMin(gs_tileMinMax.x, threadMinMax.x);
+    InterlockedMax(gs_tileMinMax.y, threadMinMax.y);
+
+    GroupMemoryBarrierWithGroupSync();
+
+    if (threadId == 0)
+        _MaterialRange[COORD_TEXTURE2D_X(groupId)] = gs_tileMinMax;
+}

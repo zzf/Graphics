@@ -1161,7 +1161,7 @@ namespace UnityEngine.Rendering.HighDefinition
                     {
                         if (material == null) continue;
                         if (globalMaterials.Add(material))
-                            material.SetInt("_MaterialId", globalMaterials.Count - 1);
+                            material.SetInt("_MaterialId", globalMaterials.Count);
                     }
                 }
 

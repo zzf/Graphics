@@ -15,16 +15,38 @@ struct Varyings
     UNITY_VERTEX_OUTPUT_STEREO
 };
 
+TEXTURE2D_X(_MaterialRange);
+
+CBUFFER_START(cb0)
+    float4 _TileParam;
+CBUFFER_END
+
+#define _TileCount (_TileParam.xy)
+#define _GridScale (_TileParam.zw)
+
 Varyings Vert(Attributes input)
 {
     Varyings output;
-    UNITY_SETUP_INSTANCE_ID(input);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
-    float4 pos = GetFullScreenTriangleVertexPosition(input.vertexID);
-    float2 uv  = GetFullScreenTriangleTexCoord(input.vertexID);
+    uint instanceId = input.vertexID / 4;
+    uint vertexId = input.vertexID % 4;
 
-    output.positionCS = pos;
+    uint tileX = instanceId / _TileCount.x;
+    uint2 tile = uint2(instanceId - tileX * _TileCount.x, tileX);
+    float2 tileStepNDC = 1.0 / _TileCount;
+
+
+    float2 uv = GetQuadTexCoord(vertexId);
+    uv = (uv + tile) * tileStepNDC * _GridScale;
+
+    float2 pos = uv * float2(2.0f, -2.0f) - float2(1.0f, -1.0f);
+
+    const uint2 tileMinMax = asuint(_MaterialRange[COORD_TEXTURE2D_X(uint2(tile.x, tile.y))]);
+    if (tileMinMax.x == UINT_MAX || _MaterialId < tileMinMax.x || _MaterialId > tileMinMax.y)
+        pos.x = asfloat(0xFFFFFFFF);
+
+    output.positionCS = float4(pos, UNITY_NEAR_CLIP_VALUE, 1.0);
     output.texcoord   = uv;
     return output;
 }

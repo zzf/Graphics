@@ -607,9 +607,24 @@ namespace UnityEngine.Rendering.HighDefinition
             public HDCamera camera;
             public HDRenderPipeline pipe;
 
+            public int numTileX, numTileY;
+
             public TextureHandle visibilityBuffer;
             public TextureHandle materialDepth;
+            public TextureHandle materialRange;
             public ComputeBufferHandle perInstanceData;
+        }
+
+        class MaterialClassificationPassData
+        {
+            public ComputeShader materialClassificationCS;
+
+            public HDCamera camera;
+            public HDRenderPipeline pipe;
+            public int numTileX, numTileY;
+
+            public TextureHandle materialDepth;
+            public TextureHandle materialRange;
         }
 
         class ForwardTransparentPassData : ForwardPassData
@@ -730,6 +745,45 @@ namespace UnityEngine.Rendering.HighDefinition
             if (!hdCamera.frameSettings.IsEnabled(FrameSettingsField.OpaqueObjects))
                 return;
 
+            // split screen in tiles of 64x64 for material early z
+            const int tileSize = 64;
+            var numTileX = (hdCamera.actualWidth + tileSize - 1) / tileSize;
+            var numTileY = (hdCamera.actualHeight + tileSize - 1) / tileSize;
+
+            TextureHandle materialRange = renderGraph.CreateTexture(new TextureDesc(numTileX, numTileY, false, true)
+            {
+                colorFormat = GraphicsFormat.R32G32_UInt,
+                bindTextureMS = false,
+                enableRandomWrite = true,
+                name = "Material Range"
+            });
+
+            using (var builder = renderGraph.AddRenderPass<MaterialClassificationPassData>("Material Classification", out var passData, ProfilingSampler.Get(HDProfileId.MaterialClassification)))
+            {
+                passData.camera = hdCamera;
+
+                passData.numTileX = numTileX;
+                passData.numTileY = numTileY;
+
+                passData.materialDepth = builder.WriteTexture(prepass.materialDepth);
+                passData.materialRange = builder.WriteTexture(materialRange);
+                passData.materialClassificationCS = defaultResources.shaders.materialClassificationCS;
+
+                builder.SetRenderFunc(
+                    (MaterialClassificationPassData data, RenderGraphContext context) =>
+                    {
+                        var cmd = context.cmd;
+                        var cs = data.materialClassificationCS;
+                        var kernel = 0;
+
+                        cmd.SetComputeTextureParam(cs, kernel, "_MaterialDepth", data.materialDepth);
+                        cmd.SetComputeTextureParam(cs, kernel, "_MaterialRange", data.materialRange);
+                        cmd.SetComputeVectorParam(cs, "_ScreenSize", new Vector4(data.camera.actualWidth, data.camera.actualHeight, 0, 0));
+
+                        cmd.DispatchCompute(cs, kernel, data.numTileX, data.numTileY, 1);
+                    });
+            }
+
             using (var builder = renderGraph.AddRenderPass<VisibilityColorPassData>("Visibility Color", out var passData, ProfilingSampler.Get(HDProfileId.VisibilityColor)))
             {
                 PrepareCommonForwardPassData(renderGraph, builder, passData, true, hdCamera.frameSettings, PrepareForwardOpaqueRendererList(cullResults, hdCamera), lightLists, shadowResult);
@@ -745,10 +799,13 @@ namespace UnityEngine.Rendering.HighDefinition
                 passData.lightingBuffers = ReadLightingBuffers(lightingBuffers, builder);
 
                 passData.camera = hdCamera;
+                passData.numTileX = numTileX;
+                passData.numTileY = numTileY;
 
                 passData.pipe = this;
                 passData.visibilityBuffer = builder.ReadTexture(prepass.visibilityBuffer);
                 passData.materialDepth = builder.ReadTexture(prepass.materialDepth);
+                passData.materialRange = builder.ReadTexture(materialRange);
                 passData.perInstanceData = builder.CreateTransientComputeBuffer(new ComputeBufferDesc(globalRendererCount, 16 * sizeof(float) + sizeof(uint)));
 
                 builder.SetRenderFunc(
@@ -777,13 +834,16 @@ namespace UnityEngine.Rendering.HighDefinition
 
                         context.cmd.SetGlobalBuffer("_PerInstanceData", data.perInstanceData);
                         context.cmd.SetGlobalTexture("_VisibilityBuffer", data.visibilityBuffer);
+                        context.cmd.SetGlobalTexture("_MaterialRange", data.materialRange);
                         context.cmd.SetGlobalTexture("_MaterialDepth", data.materialDepth);
+
+                        context.cmd.SetGlobalVector("_TileParam", new Vector4(data.numTileX, data.numTileY, (tileSize * data.numTileX) / (float)data.camera.actualWidth, (tileSize * data.numTileY) / (float)data.camera.actualHeight));
 
                         foreach (var material in data.pipe.globalMaterials)
                         {
                             int passIndex = material.FindPass(HDShaderPassNames.s_VisibilityColorPassStr);
                             if (passIndex != -1)
-                                context.cmd.DrawProcedural(Matrix4x4.identity, material, passIndex, MeshTopology.Triangles, 3, 1);
+                                context.cmd.DrawProcedural(Matrix4x4.identity, material, passIndex, MeshTopology.Quads, 4 * data.numTileX * data.numTileY, 1);
                         }
 
                         // TODO : what will happen with render list? maybe we will not be able to skip this pass because of decal emissive projector, in this case
