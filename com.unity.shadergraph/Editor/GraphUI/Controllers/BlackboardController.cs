@@ -16,7 +16,6 @@ namespace UnityEditor.ShaderGraph.GraphUI.Controllers
 
         public void InitializeWindowPosition()
         {
-            var oldRect = Overlay.containerWindow.position;
             Overlay.Undock();
             Overlay.floatingPosition = new Vector2(0, m_ParentWindow.position.height * 0.15f);
         }

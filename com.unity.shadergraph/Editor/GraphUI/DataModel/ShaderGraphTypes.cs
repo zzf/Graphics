@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using UnityEditor.GraphToolsFoundation.Overdrive.BasicModel;
+using UnityEditor.ShaderGraph.Registry.Example;
 using UnityEditor.ShaderGraph.Registry.Experimental;
 using UnityEngine.GraphToolsFoundation.Overdrive;
 
@@ -6,16 +9,13 @@ namespace UnityEditor.ShaderGraph.GraphUI.DataModel
 {
     public static class ShaderGraphTypes
     {
-        // TODO: This should eventually be more flexible, but for now serves its purpose
-        static readonly Dictionary<string, TypeHandle> k_TypeHandlesByName = new()
+        public class NumericConstant : Constant<GraphType>
         {
-            {"NumericLiteral", TypeHandle.Float},
-            {"StringLiteral", TypeHandle.String},
-        };
+            public GraphType.Primitive PrimitiveType;
+            public GraphType.Precision PrecisionType;
 
-        public static TypeHandle GetTypeHandleFromKey(RegistryKey registryKey)
-        {
-            return k_TypeHandlesByName.TryGetValue(registryKey.Name, out var handle) ? handle : TypeHandle.Unknown;
+            public static readonly List<string> PrimitiveTypes = new (Enum.GetNames(typeof(GraphType.Primitive)));
+            public static readonly List<string> PrecisionTypes = new(Enum.GetNames(typeof(GraphType.Precision)));
         }
     }
 }

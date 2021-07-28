@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEditor.GraphToolsFoundation.Overdrive.BasicModel;
+using UnityEditor.ShaderGraph.Registry.Example;
 using UnityEngine;
 using UnityEngine.GraphToolsFoundation.Overdrive;
 

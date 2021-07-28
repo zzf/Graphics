@@ -3,6 +3,7 @@ using UnityEditor.GraphToolsFoundation.Overdrive.BasicModel;
 using UnityEditor.ShaderGraph.GraphUI.DataModel;
 using UnityEditor.ShaderGraph.GraphUI.GraphElements;
 using UnityEditor.ShaderGraph.GraphUI.GraphElements.Views;
+using UnityEditor.ShaderGraph.Registry.Example;
 using UnityEngine.UIElements;
 
 namespace UnityEditor.ShaderGraph.GraphUI.Factory

@@ -54,12 +54,15 @@ namespace UnityEditor.ShaderGraph.GraphUI
                 ? PortOrientation.Vertical
                 : PortOrientation.Horizontal;
 
-            var type = ShaderGraphTypes.GetTypeHandleFromKey(typeKey);
+            if (GraphModel.Stencil is ShaderGraphStencil shaderGraphStencil)
+            {
+                var type = shaderGraphStencil.GetTypeHandleFromKey(typeKey);
 
-            if (isInput)
-                this.AddDataInputPort(name, type, orientation: orientation);
-            else
-                this.AddDataOutputPort(name, type, orientation: orientation);
+                if (isInput)
+                    this.AddDataInputPort(name, type, orientation: orientation);
+                else
+                    this.AddDataOutputPort(name, type, orientation: orientation);
+            }
         }
     }
 }
