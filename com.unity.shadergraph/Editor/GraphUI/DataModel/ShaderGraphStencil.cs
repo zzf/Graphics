@@ -21,14 +21,26 @@ namespace UnityEditor.ShaderGraph.GraphUI
 
         public override string ToolName => Name;
 
+
+        public ShaderGraphStencil() : base()
+        {
+            InstantiateRegistry();
+
+            CreateRegistryTypeMapping(RegistryInstance.BrowseRegistryKeys());
+        }
+
         public override IBlackboardGraphModel CreateBlackboardGraphModel(IGraphAssetModel graphAssetModel) => new SGBlackboardGraphModel(graphAssetModel);
 
         void CreateRegistryTypeMapping(IEnumerable<RegistryKey> registryKeys)
         {
             m_UITypeMappings = new List<IUITypeMapping>();
             m_UITypeMappings.Add(new BoolTypeMapping<GraphType, BooleanConstant>());
-            m_UITypeMappings.Add(new FloatTypeMapping<GraphType, BooleanConstant>());
-            m_UITypeMappings.Add(new Vector2TypeMapping<GraphType, BooleanConstant>());
+            m_UITypeMappings.Add(new FloatTypeMapping<GraphType, FloatConstant>());
+            m_UITypeMappings.Add(new Vector2TypeMapping<GraphType, Vector2Constant>());
+            m_UITypeMappings.Add(new Vector3TypeMapping<GraphType, Vector3Constant>());
+            m_UITypeMappings.Add(new Vector4TypeMapping<GraphType, Vector4Constant>());
+            m_UITypeMappings.Add(new DynamicTypeMapping<GraphType, ShaderGraphTypes.NumericConstant>());
+            m_UITypeMappings.Add(new StringTypeMapping<StringLiteralNode, StringConstant>());
         }
 
         public TypeHandle GetTypeHandleFromKey(RegistryKey registryKey)
@@ -100,15 +112,18 @@ namespace UnityEditor.ShaderGraph.GraphUI
         {
             if (RegistryInstance == null)
             {
-                RegistryInstance = new Registry.Experimental.Registry();
-                RegistryInstance.RegisterNodeBuilder<Registry.Example.NumericLiteralNode>();
-                RegistryInstance.RegisterNodeBuilder<Registry.Example.StringLiteralNode>();
-                RegistryInstance.RegisterNodeBuilder<Registry.Example.GraphType>();
-
-                CreateRegistryTypeMapping(RegistryInstance.BrowseRegistryKeys());
+                InstantiateRegistry();
             }
 
             return RegistryInstance;
+        }
+
+        void InstantiateRegistry()
+        {
+            RegistryInstance = new Registry.Experimental.Registry();
+            RegistryInstance.RegisterNodeBuilder<Registry.Example.NumericLiteralNode>();
+            RegistryInstance.RegisterNodeBuilder<Registry.Example.StringLiteralNode>();
+            RegistryInstance.RegisterNodeBuilder<Registry.Example.GraphType>();
         }
 
         public override void PopulateBlackboardCreateMenu(string sectionName, GenericMenu menu, CommandDispatcher commandDispatcher)
@@ -116,7 +131,7 @@ namespace UnityEditor.ShaderGraph.GraphUI
             foreach (var typeMapping in m_UITypeMappings)
             {
                 var typeHandle = typeMapping.GTFType;
-                menu.AddItem(new GUIContent("Create " + typeHandle.Identification), false, () =>
+                menu.AddItem(new GUIContent("Create " + typeHandle.Name), false, () =>
                 {
                     const string newItemName = "variable";
                     var finalName = newItemName;
