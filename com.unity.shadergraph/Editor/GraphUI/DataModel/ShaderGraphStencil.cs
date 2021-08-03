@@ -5,8 +5,7 @@ using UnityEditor.GraphToolsFoundation.Overdrive;
 using UnityEditor.GraphToolsFoundation.Overdrive.BasicModel;
 using UnityEditor.ShaderGraph.GraphUI.DataModel;
 using UnityEditor.ShaderGraph.GraphUI.EditorCommon;
-using UnityEditor.ShaderGraph.Registry.Example;
-using UnityEditor.ShaderGraph.Registry.Experimental;
+using UnityEditor.ShaderGraph.Registry;
 using UnityEngine;
 using UnityEngine.GraphToolsFoundation.Overdrive;
 using Object = System.Object;
@@ -17,10 +16,9 @@ namespace UnityEditor.ShaderGraph.GraphUI
     {
         public const string Name = "ShaderGraph";
 
-        IList<IUITypeMapping> m_UITypeMappings;
+        IList<UITypeMapping> m_UITypeMappings;
 
         public override string ToolName => Name;
-
 
         public ShaderGraphStencil() : base()
         {
@@ -33,14 +31,13 @@ namespace UnityEditor.ShaderGraph.GraphUI
 
         void CreateRegistryTypeMapping(IEnumerable<RegistryKey> registryKeys)
         {
-            m_UITypeMappings = new List<IUITypeMapping>();
-            m_UITypeMappings.Add(new BoolTypeMapping<GraphType, BooleanConstant>());
-            m_UITypeMappings.Add(new FloatTypeMapping<GraphType, FloatConstant>());
-            m_UITypeMappings.Add(new Vector2TypeMapping<GraphType, Vector2Constant>());
-            m_UITypeMappings.Add(new Vector3TypeMapping<GraphType, Vector3Constant>());
-            m_UITypeMappings.Add(new Vector4TypeMapping<GraphType, Vector4Constant>());
-            m_UITypeMappings.Add(new DynamicTypeMapping<GraphType, ShaderGraphTypes.NumericConstant>());
-            m_UITypeMappings.Add(new StringTypeMapping<StringLiteralNode, StringConstant>());
+            m_UITypeMappings = new List<UITypeMapping>();
+            m_UITypeMappings.Add(new BoolTypeMapping<Registry.Exploration.GraphTypeDefinition, BooleanConstant>(RegistryInstance));
+            m_UITypeMappings.Add(new FloatTypeMapping<Registry.Exploration.GraphTypeDefinition, FloatConstant>(RegistryInstance));
+            //m_UITypeMappings.Add(new Vector2TypeMapping<Registry.Exploration.GraphTypeDefinition, Vector2Constant>());
+            //m_UITypeMappings.Add(new Vector3TypeMapping<Registry.Exploration.GraphTypeDefinition, Vector3Constant>());
+            //m_UITypeMappings.Add(new Vector4TypeMapping<Registry.Exploration.GraphTypeDefinition, Vector4Constant>());
+            //m_UITypeMappings.Add(new DynamicTypeMapping<Registry.Exploration.GraphTypeDefinition, ShaderGraphTypes.NumericConstant>());
         }
 
         public TypeHandle GetTypeHandleFromKey(RegistryKey registryKey)

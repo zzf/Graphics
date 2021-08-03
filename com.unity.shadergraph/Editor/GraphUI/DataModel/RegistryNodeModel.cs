@@ -49,8 +49,6 @@ namespace UnityEditor.ShaderGraph.GraphUI
         {
             if (!reader.TryGetPort(name, out var portReader)) return;
 
-
-
             var isInput = portReader.GetFlags().isInput;
             var orientation = portReader.GetFlags().isHorizontal
                 ? PortOrientation.Horizontal
@@ -58,7 +56,7 @@ namespace UnityEditor.ShaderGraph.GraphUI
 
             if (GraphModel.Stencil is ShaderGraphStencil shaderGraphStencil)
             {
-                var type = shaderGraphStencil.GetTypeHandleFromKey(typeKey);
+                var type = shaderGraphStencil.GetTypeHandleFromKey(portReader.GetRegistryKey());
 
                 if (isInput)
                     this.AddDataInputPort(name, type, orientation: orientation);

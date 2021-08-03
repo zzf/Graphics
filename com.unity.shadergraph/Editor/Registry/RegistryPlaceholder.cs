@@ -16,8 +16,7 @@ namespace UnityEditor.ShaderGraph.Registry
             public RegistryKey GetRegistryKey() => new RegistryKey { Name = "GraphType", Version = 1 };
             public RegistryFlags GetRegistryFlags() => RegistryFlags.IsType;
 
-            enum Precision { Fixed, Half, Full }
-
+            public enum Precision { Fixed, Half, Full }
 
 
             public void BuildNode(GraphDelta.INodeReader userData, GraphDelta.INodeWriter concreteData, IRegistry registry)
