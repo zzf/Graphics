@@ -4,13 +4,19 @@ namespace UnityEditor.ShaderGraph.GraphDelta
 {
     public interface IGraphHandler
     {
+        public INodeWriter AddNode(string name);
+        public INodeReader GetNode(string name);
+        public INodeWriter GetNodeWriter(string name);
+        public void RemoveNode(string name);
+        public IEnumerable<INodeReader> GetNodes();
+
         //public TargetRef AddTarget(TargetType targetType)
 
         //public void RemoveTarget(TargetRef targetRef)
 
         //public List<TargetSetting> GetTargetSettings(TargetRef targetRef)
 
-        //public NodeRef AddNode(NodeType nodeType)
+        //public INodeWriter AddNode(NodeType nodeType)
 
         //public void RemoveNode(INodeRef nodeRef);
 
@@ -20,7 +26,7 @@ namespace UnityEditor.ShaderGraph.GraphDelta
 
         //public IEnumerable<IPortReader> GetInputPorts(INodeReader nodeRef);
 
-        //public IEnumerable<IPortRef> GetOutputPorts(INodeRef nodeRef);
+        //public IEnumerable<IPortReader> GetOutputPorts(INodeReader nodeRef);
 
         //public bool CanConnect(PortRef outputPort, PortRef inputPort)
 
