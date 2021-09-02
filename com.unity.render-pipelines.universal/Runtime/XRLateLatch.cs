@@ -16,8 +16,7 @@ namespace UnityEngine.Rendering.Universal
         internal void AllowMark(bool allowMark)
         {
 #if ENABLE_VR && ENABLE_XR_MODULE
-            if (isEnabled)
-                canMark = allowMark;
+            canMark = allowMark;
 #endif
         }
 
@@ -50,7 +49,7 @@ namespace UnityEngine.Rendering.Universal
         internal void UnmarkShaderProperties(CommandBuffer cmd)
         {
 #if ENABLE_VR && ENABLE_XR_MODULE
-            if (isEnabled &&hasMarked)
+            if (isEnabled && hasMarked)
             {
                 cmd.UnmarkLateLatchMatrix(CameraLateLatchMatrixType.View);
                 cmd.UnmarkLateLatchMatrix(CameraLateLatchMatrixType.InverseView);
@@ -61,10 +60,10 @@ namespace UnityEngine.Rendering.Universal
 #endif
         }
 
-        internal void MarkShaderProperties(XRPass xrPass, CommandBuffer cmd)
+        internal void MarkShaderProperties(XRPass xrPass, CommandBuffer cmd, bool renderIntoTexture)
         {
 #if ENABLE_VR && ENABLE_XR_MODULE
-            if (isEnabled && canMark && xrPass.viewCount == 2)
+            if (isEnabled && canMark)
             {
                 cmd.MarkLateLatchMatrixShaderPropertyID(CameraLateLatchMatrixType.View, XRBuiltinShaderConstants.unity_StereoMatrixV);
                 cmd.MarkLateLatchMatrixShaderPropertyID(CameraLateLatchMatrixType.InverseView, XRBuiltinShaderConstants.unity_StereoMatrixInvV);
@@ -72,7 +71,7 @@ namespace UnityEngine.Rendering.Universal
                 cmd.MarkLateLatchMatrixShaderPropertyID(CameraLateLatchMatrixType.InverseViewProjection, XRBuiltinShaderConstants.unity_StereoMatrixInvVP);
 
                 for (int viewIndex = 0; viewIndex < 2; ++viewIndex)
-                    s_projMatrix[viewIndex] = GL.GetGPUProjectionMatrix(xrPass.GetProjMatrix(viewIndex), false);
+                    s_projMatrix[viewIndex] = GL.GetGPUProjectionMatrix(xrPass.GetProjMatrix(viewIndex), renderIntoTexture);
 
                 cmd.SetLateLatchProjectionMatrices(s_projMatrix);
                 hasMarked = true;

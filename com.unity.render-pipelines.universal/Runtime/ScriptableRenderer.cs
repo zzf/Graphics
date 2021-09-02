@@ -105,7 +105,7 @@ namespace UnityEngine.Rendering.Universal
             if (cameraData.xr.enabled)
             {
                 XRBuiltinShaderConstants.Update(cameraData.xr, cmd, false);
-                cameraData.xrLateLatch.MarkShaderProperties(cameraData.xr, cmd);
+                cameraData.xrLateLatch.MarkShaderProperties(cameraData.xr, cmd, false);
                 return;
             }
 #endif
@@ -960,8 +960,8 @@ namespace UnityEngine.Rendering.Universal
             else
                 renderPass.Execute(context, ref renderingData);
 
-            // Inform the late latching system for XR once we're done with a render pass
-            cameraData.xrLateLatch.MarkShaderProperties(cameraData.xr, cmd);
+            // Inform the late latching system once we're done with a render pass
+            cameraData.xrLateLatch.UnmarkShaderProperties(cmd);
         }
 
         void SetRenderPassAttachments(CommandBuffer cmd, ScriptableRenderPass renderPass, ref CameraData cameraData)
@@ -1088,7 +1088,9 @@ namespace UnityEngine.Rendering.Universal
                             // SetRenderTarget might alter the internal device state(winding order).
                             // Non-stereo buffer is already updated internally when switching render target. We update stereo buffers here to keep the consistency.
                             int xrTargetIndex = RenderingUtils.IndexOf(renderPass.colorAttachments, cameraData.xr.renderTarget);
-                            XRBuiltinShaderConstants.Update(cameraData.xr, cmd, xrTargetIndex == -1);
+                            bool renderIntoTexture = xrTargetIndex == -1;
+                            XRBuiltinShaderConstants.Update(cameraData.xr, cmd, renderIntoTexture);
+                            cameraData.xrLateLatch.MarkShaderProperties(cameraData.xr, cmd, renderIntoTexture);
                         }
 #endif
                     }
@@ -1183,7 +1185,9 @@ namespace UnityEngine.Rendering.Universal
                         {
                             // SetRenderTarget might alter the internal device state(winding order).
                             // Non-stereo buffer is already updated internally when switching render target. We update stereo buffers here to keep the consistency.
-                            XRBuiltinShaderConstants.Update(cameraData.xr, cmd, passColorAttachment != cameraData.xr.renderTarget);
+                            bool renderIntoTexture = passColorAttachment != cameraData.xr.renderTarget;
+                            XRBuiltinShaderConstants.Update(cameraData.xr, cmd, renderIntoTexture);
+                            cameraData.xrLateLatch.MarkShaderProperties(cameraData.xr, cmd, renderIntoTexture);
                         }
 #endif
                     }
