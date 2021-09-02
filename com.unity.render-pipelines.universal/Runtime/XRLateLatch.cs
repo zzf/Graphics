@@ -4,14 +4,14 @@ namespace UnityEngine.Rendering.Universal
 {
     internal struct XRLateLatch
     {
-    #if ENABLE_VR && ENABLE_XR_MODULE
+#if ENABLE_VR && ENABLE_XR_MODULE
         internal bool isEnabled { get; set; }
         internal bool canMark   { get; set; }
         internal bool hasMarked { get; set; }
 
         // Prevent GC by keeping an array pre-allocated
         static Matrix4x4[] s_projMatrix = new Matrix4x4[2];
-     #endif
+#endif
 
         internal void AllowMark(bool allowMark)
         {
