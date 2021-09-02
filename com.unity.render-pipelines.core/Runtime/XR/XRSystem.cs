@@ -19,19 +19,15 @@ namespace UnityEngine.Experimental.Rendering
 #if ENABLE_VR && ENABLE_XR_MODULE
         static List<XRDisplaySubsystem> s_DisplayList = new List<XRDisplaySubsystem>();
         static XRDisplaySubsystem s_Display;
-#endif
 
         /// <summary>
         /// Returns the active XR display.
         /// </summary>
         static public XRDisplaySubsystem GetActiveDisplay()
         {
-#if ENABLE_VR && ENABLE_XR_MODULE
             return s_Display;
-#else
-            return null;
-#endif
         }
+#endif
 
         // MSAA level (number of samples per pixel) shared by all XR displays
         static MSAASamples s_MSAASamples = MSAASamples.None;
