@@ -172,6 +172,7 @@ namespace UnityEngine.Rendering.Universal
         public SortingCriteria defaultOpaqueSortFlags;
 
         internal XRPass xr;
+        internal XRLateLatch xrLateLatch;
 
         public float maxShadowDistance;
         public bool postProcessEnabled;

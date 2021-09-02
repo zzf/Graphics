@@ -105,6 +105,7 @@ namespace UnityEngine.Rendering.Universal
             if (cameraData.xr.enabled)
             {
                 XRBuiltinShaderConstants.Update(cameraData.xr, cmd, false);
+                cameraData.xrLateLatch.MarkShaderProperties(cameraData.xr, cmd);
                 return;
             }
 #endif
@@ -725,11 +726,8 @@ namespace UnityEngine.Rendering.Universal
                     ExecuteBlock(RenderPassBlock.MainRenderingTransparent, in renderBlocks, context, ref renderingData);
                 }
 
-#if ENABLE_VR && ENABLE_XR_MODULE
                 // Late latching is not supported after this point in the frame
-                if (cameraData.xr.enabled)
-                    cameraData.xr.canMarkLateLatch = false;
-#endif
+                cameraData.xrLateLatch.AllowMark(false);
 
                 // Draw Gizmos...
                 if (drawGizmos)
@@ -963,7 +961,7 @@ namespace UnityEngine.Rendering.Universal
                 renderPass.Execute(context, ref renderingData);
 
             // Inform the late latching system for XR once we're done with a render pass
-            XRBuiltinShaderConstants.UnmarkLateLatchShaderProperties(cameraData.xr, cmd);
+            cameraData.xrLateLatch.MarkShaderProperties(cameraData.xr, cmd);
         }
 
         void SetRenderPassAttachments(CommandBuffer cmd, ScriptableRenderPass renderPass, ref CameraData cameraData)
@@ -1198,9 +1196,7 @@ namespace UnityEngine.Rendering.Universal
 #if ENABLE_VR && ENABLE_XR_MODULE
             if (cameraData.xr.enabled)
             {
-                if (cameraData.xr.isLateLatchEnabled)
-                    cameraData.xr.canMarkLateLatch = true;
-
+                cameraData.xrLateLatch.AllowMark(true);
                 cameraData.xr.StartSinglePass(cmd);
                 cmd.EnableShaderKeyword(ShaderKeywordStrings.UseDrawProcedural);
                 context.ExecuteCommandBuffer(cmd);

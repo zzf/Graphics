@@ -21,6 +21,18 @@ namespace UnityEngine.Experimental.Rendering
         static XRDisplaySubsystem s_Display;
 #endif
 
+        /// <summary>
+        /// Returns the active XR display.
+        /// </summary>
+        static public XRDisplaySubsystem GetActiveDisplay()
+        {
+#if ENABLE_VR && ENABLE_XR_MODULE
+            return s_Display;
+#else
+            return null;
+#endif
+        }
+
         // MSAA level (number of samples per pixel) shared by all XR displays
         static MSAASamples s_MSAASamples = MSAASamples.None;
 
@@ -165,35 +177,6 @@ namespace UnityEngine.Experimental.Rendering
         {
             CoreUtils.Destroy(s_OcclusionMeshMaterial);
             CoreUtils.Destroy(s_MirrorViewMaterial);
-        }
-
-        /// <summary>
-        /// Used by the render pipeline to begin late lacthing mechanism.
-        /// </summary>
-        public static void BeginLateLatching(Camera camera, XRPass xrPass)
-        {
-#if ENABLE_VR && ENABLE_XR_MODULE
-            // Only support late latching for multiview
-            if (s_Display != null && xrPass.viewCount == 2)
-            {
-                s_Display.BeginRecordingIfLateLatched(camera);
-                xrPass.isLateLatchEnabled = true;
-            }
-#endif
-        }
-
-        /// <summary>
-        /// Used by the render pipeline to end late lacthing mechanism.
-        /// </summary>
-        public static void EndLateLatching(Camera camera, XRPass xrPass)
-        {
-#if ENABLE_VR && ENABLE_XR_MODULE
-            if (s_Display != null && xrPass.isLateLatchEnabled)
-            {
-                s_Display.EndRecordingIfLateLatched(camera);
-                xrPass.isLateLatchEnabled = false;
-            }
-#endif
         }
 
         // Used by the render pipeline to communicate to the XR device the range of the depth buffer.
