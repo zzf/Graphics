@@ -97,13 +97,15 @@ namespace UnityEditor.ShaderGraph.Registry
 
                 var builder = new ShaderFoundry.ShaderFunction.Builder(funcName);
                 string body = "";
+                bool firstInput = true;
                 foreach (var port in data.GetPorts())
                 {
                     var name = port.GetName();
                     if (port.IsInput())
                     {
+                        firstInput = false;
                         builder.AddInput(shaderType, name);
-                        body += body == "" ? name : $" {Op} {name}";
+                        body += firstInput ? name : $" {Op} {name}";
                     }
                     else
                     {
