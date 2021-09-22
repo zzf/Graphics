@@ -34,11 +34,11 @@ namespace UnityEngine.Rendering.Universal.Internal
         {
             get
             {
-                #if !UNITY_EDITOR && UNITY_SWITCH
+#if !UNITY_EDITOR && UNITY_SWITCH
                 return false;
-                #else
+#else
                 return IsOpenGL;
-                #endif
+#endif
             }
         }
 
@@ -46,11 +46,11 @@ namespace UnityEngine.Rendering.Universal.Internal
         {
             get
             {
-                #if !UNITY_EDITOR && UNITY_SWITCH
+#if !UNITY_EDITOR && UNITY_SWITCH
                 return false;
-                #else
+#else
                 return IsOpenGL;
-                #endif
+#endif
             }
         }
 
@@ -66,11 +66,11 @@ namespace UnityEngine.Rendering.Universal.Internal
         {
             get
             {
-                #if !UNITY_EDITOR && UNITY_SWITCH
+#if !UNITY_EDITOR && UNITY_SWITCH
                 return false;
-                #else
+#else
                 return IsOpenGL;
-                #endif
+#endif
             }
         }
 
@@ -191,11 +191,14 @@ namespace UnityEngine.Rendering.Universal.Internal
         struct CullLightsJob : IJob
         {
             public DeferredTiler tiler;
-            [ReadOnly][Unity.Collections.LowLevel.Unsafe.NativeDisableContainerSafetyRestriction]
+            [ReadOnly]
+            [Unity.Collections.LowLevel.Unsafe.NativeDisableContainerSafetyRestriction]
             public NativeArray<DeferredTiler.PrePunctualLight> prePunctualLights;
-            [ReadOnly][Unity.Collections.LowLevel.Unsafe.NativeDisableContainerSafetyRestriction]
+            [ReadOnly]
+            [Unity.Collections.LowLevel.Unsafe.NativeDisableContainerSafetyRestriction]
             public NativeArray<ushort> coarseTiles;
-            [ReadOnly][Unity.Collections.LowLevel.Unsafe.NativeDisableContainerSafetyRestriction]
+            [ReadOnly]
+            [Unity.Collections.LowLevel.Unsafe.NativeDisableContainerSafetyRestriction]
             public NativeArray<uint> coarseTileHeaders;
             public int coarseHeaderOffset;
             public int istart;
@@ -344,7 +347,7 @@ namespace UnityEngine.Rendering.Universal.Internal
         // This is an overlay camera being rendered.
         internal bool IsOverlay { get; set; }
         // Not all platforms support R8G8B8A8_SNorm, so we need to check for the support and force accurate GBuffer normals and relevant shader variants
-        private  bool m_AccurateGbufferNormals;
+        private bool m_AccurateGbufferNormals;
         internal bool AccurateGbufferNormals
         {
             get { return m_AccurateGbufferNormals; }
@@ -580,8 +583,6 @@ namespace UnityEngine.Rendering.Universal.Internal
                     CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.MixedLightingSubtractive, isSubtractive); // Backward compatibility
                     // This should be moved to a more global scope when framebuffer fetch is introduced to more passes
                     CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.RenderPassEnabled, this.UseRenderPass && renderingData.cameraData.cameraType == CameraType.Game);
-
-                    m_LightCookieManager.Setup(context, cmd, ref renderingData.lightData);
                 }
 
                 context.ExecuteCommandBuffer(cmd);
@@ -1153,6 +1154,11 @@ namespace UnityEngine.Rendering.Universal.Internal
                 RenderFog(context, cmd, ref renderingData);
             }
 
+            // Restore shader keywords
+            CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.AdditionalLightShadows, renderingData.shadowData.isKeywordAdditionalLightShadowsEnabled);
+            CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.SoftShadows, renderingData.shadowData.isKeywordSoftShadowsEnabled);
+            CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.LightCookies, m_LightCookieManager.IsKeywordLightCookieEnabled);
+
             context.ExecuteCommandBuffer(cmd);
             CommandBufferPool.Release(cmd);
         }
@@ -1174,7 +1180,7 @@ namespace UnityEngine.Rendering.Universal.Internal
             Vector4 lightPos, lightColor, lightAttenuation, lightSpotDir, lightOcclusionChannel;
             UniversalRenderPipeline.InitializeLightConstants_Common(lightData.visibleLights, lightData.mainLightIndex, out lightPos, out lightColor, out lightAttenuation, out lightSpotDir, out lightOcclusionChannel);
 
-            UniversalAdditionalLightData additionalLightData = ForwardLights.GetAdditionalLightData(lightData.visibleLights[lightData.mainLightIndex].light);
+            var additionalLightData = lightData.visibleLights[lightData.mainLightIndex].light.GetUniversalAdditionalLightData();
             uint lightLayerMask = (uint)additionalLightData.lightLayerMask;
 
             cmd.SetGlobalVector(ShaderConstants._MainLightPosition, lightPos);
@@ -1478,7 +1484,7 @@ namespace UnityEngine.Rendering.Universal.Internal
                         // Add light list for the tile.
                         for (int l = 0; l < tileLightCount; ++l)
                         {
-                            ushort visLightIndex    = tiles[tileOffset                  + l];
+                            ushort visLightIndex = tiles[tileOffset + l];
                             ushort relLightBitRange = tiles[tileOffset + tileLightCount + l];
                             ushort relLightIndex = visLightToRelLights[visLightIndex];
                             relLightList[relLightIndices++] = (uint)relLightIndex | (uint)(relLightBitRange << 16);
@@ -1614,7 +1620,7 @@ namespace UnityEngine.Rendering.Universal.Internal
                 if (vl.light.bakingOutput.lightmapBakeType == LightmapBakeType.Mixed)
                     lightFlags |= (int)LightFlag.SubtractiveMixedLighting;
 
-                UniversalAdditionalLightData additionalLightData = ForwardLights.GetAdditionalLightData(vl.light);
+                var additionalLightData = vl.light.GetUniversalAdditionalLightData();
                 uint lightLayerMask = (uint)additionalLightData.lightLayerMask;
 
                 // Setup shadow paramters:
@@ -1624,19 +1630,19 @@ namespace UnityEngine.Rendering.Universal.Internal
                 if (visLightIndex == mainLightIndex)
                 {
                     hasDeferredShadows = vl.light && vl.light.shadows != LightShadows.None;
-                    CoreUtils.SetKeyword(cmd, ShaderKeywordStrings._DEFERRED_LIGHT_SHADOWS, false);
+                    CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.AdditionalLightShadows, false);
                 }
                 else
                 {
                     int shadowLightIndex = m_AdditionalLightsShadowCasterPass != null ? m_AdditionalLightsShadowCasterPass.GetShadowLightIndexFromLightIndex(visLightIndex) : -1;
                     hasDeferredShadows = vl.light && vl.light.shadows != LightShadows.None && shadowLightIndex >= 0;
-                    CoreUtils.SetKeyword(cmd, ShaderKeywordStrings._DEFERRED_LIGHT_SHADOWS, hasDeferredShadows);
+                    CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.AdditionalLightShadows, hasDeferredShadows);
 
                     cmd.SetGlobalInt(ShaderConstants._ShadowLightIndex, shadowLightIndex);
                 }
 
                 bool hasSoftShadow = hasDeferredShadows && renderingData.shadowData.supportsSoftShadows && vl.light.shadows == LightShadows.Soft;
-                CoreUtils.SetKeyword(cmd, ShaderKeywordStrings._DEFERRED_SHADOWS_SOFT, hasSoftShadow);
+                CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.SoftShadows, hasSoftShadow);
                 CoreUtils.SetKeyword(cmd, ShaderKeywordStrings._DEFERRED_FIRST_LIGHT, isFirstLight); // First directional light applies SSAO
                 CoreUtils.SetKeyword(cmd, ShaderKeywordStrings._DEFERRED_MAIN_LIGHT, visLightIndex == mainLightIndex); // main directional light use different uniform constants from additional directional lights
 
@@ -1652,8 +1658,6 @@ namespace UnityEngine.Rendering.Universal.Internal
                 isFirstLight = false;
             }
 
-            cmd.DisableShaderKeyword(ShaderKeywordStrings._DEFERRED_LIGHT_SHADOWS);
-            cmd.DisableShaderKeyword(ShaderKeywordStrings._DEFERRED_SHADOWS_SOFT);
             cmd.DisableShaderKeyword(ShaderKeywordStrings._DIRECTIONAL);
         }
 
@@ -1683,7 +1687,7 @@ namespace UnityEngine.Rendering.Universal.Internal
                 Vector4 lightPos, lightColor, lightAttenuation, lightSpotDir, lightOcclusionChannel;
                 UniversalRenderPipeline.InitializeLightConstants_Common(visibleLights, visLightIndex, out lightPos, out lightColor, out lightAttenuation, out lightSpotDir, out lightOcclusionChannel);
 
-                UniversalAdditionalLightData additionalLightData = ForwardLights.GetAdditionalLightData(vl.light);
+                var additionalLightData = vl.light.GetUniversalAdditionalLightData();
                 uint lightLayerMask = (uint)additionalLightData.lightLayerMask;
 
                 int lightFlags = 0;
@@ -1694,12 +1698,12 @@ namespace UnityEngine.Rendering.Universal.Internal
                 bool hasDeferredLightShadows = vl.light && vl.light.shadows != LightShadows.None && shadowLightIndex >= 0;
                 bool hasSoftShadow = hasDeferredLightShadows && renderingData.shadowData.supportsSoftShadows && vl.light.shadows == LightShadows.Soft;
 
-                CoreUtils.SetKeyword(cmd, ShaderKeywordStrings._DEFERRED_LIGHT_SHADOWS, hasDeferredLightShadows);
-                CoreUtils.SetKeyword(cmd, ShaderKeywordStrings._DEFERRED_SHADOWS_SOFT, hasSoftShadow);
+                CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.AdditionalLightShadows, hasDeferredLightShadows);
+                CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.SoftShadows, hasSoftShadow);
 
                 int cookieLightIndex = m_LightCookieManager.GetLightCookieShaderDataIndex(visLightIndex);
                 // We could test this in shader (static if) a variant (shader change) is undesirable. Same for spot light.
-                CoreUtils.SetKeyword(cmd, ShaderKeywordStrings._DEFERRED_ADDITIONAL_LIGHT_COOKIES, cookieLightIndex >= 0);
+                CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.LightCookies, cookieLightIndex >= 0);
 
                 cmd.SetGlobalVector(ShaderConstants._LightPosWS, lightPos);
                 cmd.SetGlobalVector(ShaderConstants._LightColor, lightColor);
@@ -1718,9 +1722,6 @@ namespace UnityEngine.Rendering.Universal.Internal
                 cmd.DrawMesh(m_SphereMesh, transformMatrix, m_StencilDeferredMaterial, 0, m_StencilDeferredPasses[(int)StencilDeferredPasses.PunctualSimpleLit]);
             }
 
-            cmd.DisableShaderKeyword(ShaderKeywordStrings._DEFERRED_ADDITIONAL_LIGHT_COOKIES);
-            cmd.DisableShaderKeyword(ShaderKeywordStrings._DEFERRED_LIGHT_SHADOWS);
-            cmd.DisableShaderKeyword(ShaderKeywordStrings._DEFERRED_SHADOWS_SOFT);
             cmd.DisableShaderKeyword(ShaderKeywordStrings._POINT);
         }
 
@@ -1748,7 +1749,7 @@ namespace UnityEngine.Rendering.Universal.Internal
                 Vector4 lightPos, lightColor, lightAttenuation, lightSpotDir, lightOcclusionChannel;
                 UniversalRenderPipeline.InitializeLightConstants_Common(visibleLights, visLightIndex, out lightPos, out lightColor, out lightAttenuation, out lightSpotDir, out lightOcclusionChannel);
 
-                UniversalAdditionalLightData additionalLightData = ForwardLights.GetAdditionalLightData(vl.light);
+                var additionalLightData = vl.light.GetUniversalAdditionalLightData();
                 uint lightLayerMask = (uint)additionalLightData.lightLayerMask;
 
                 int lightFlags = 0;
@@ -1759,11 +1760,11 @@ namespace UnityEngine.Rendering.Universal.Internal
                 bool hasDeferredLightShadows = vl.light && vl.light.shadows != LightShadows.None && shadowLightIndex >= 0;
                 bool hasSoftShadow = hasDeferredLightShadows && renderingData.shadowData.supportsSoftShadows && vl.light.shadows == LightShadows.Soft;
 
-                CoreUtils.SetKeyword(cmd, ShaderKeywordStrings._DEFERRED_LIGHT_SHADOWS, hasDeferredLightShadows);
-                CoreUtils.SetKeyword(cmd, ShaderKeywordStrings._DEFERRED_SHADOWS_SOFT, hasSoftShadow);
+                CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.AdditionalLightShadows, hasDeferredLightShadows);
+                CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.SoftShadows, hasSoftShadow);
 
                 int cookieLightIndex = m_LightCookieManager.GetLightCookieShaderDataIndex(visLightIndex);
-                CoreUtils.SetKeyword(cmd, ShaderKeywordStrings._DEFERRED_ADDITIONAL_LIGHT_COOKIES, cookieLightIndex >= 0);
+                CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.LightCookies, cookieLightIndex >= 0);
 
                 cmd.SetGlobalVector(ShaderConstants._SpotLightScale, new Vector4(sinAlpha, sinAlpha, 1.0f - cosAlpha, vl.range));
                 cmd.SetGlobalVector(ShaderConstants._SpotLightBias, new Vector4(0.0f, 0.0f, cosAlpha, 0.0f));
@@ -1787,9 +1788,6 @@ namespace UnityEngine.Rendering.Universal.Internal
                 cmd.DrawMesh(m_HemisphereMesh, vl.localToWorldMatrix, m_StencilDeferredMaterial, 0, m_StencilDeferredPasses[(int)StencilDeferredPasses.PunctualSimpleLit]);
             }
 
-            cmd.DisableShaderKeyword(ShaderKeywordStrings._DEFERRED_ADDITIONAL_LIGHT_COOKIES);
-            cmd.DisableShaderKeyword(ShaderKeywordStrings._DEFERRED_LIGHT_SHADOWS);
-            cmd.DisableShaderKeyword(ShaderKeywordStrings._DEFERRED_SHADOWS_SOFT);
             cmd.DisableShaderKeyword(ShaderKeywordStrings._SPOT);
         }
 
@@ -1842,7 +1840,7 @@ namespace UnityEngine.Rendering.Universal.Internal
             Vector4 lightPos, lightColor, lightAttenuation, lightSpotDir, lightOcclusionChannel;
             UniversalRenderPipeline.InitializeLightConstants_Common(visibleLights, index, out lightPos, out lightColor, out lightAttenuation, out lightSpotDir, out lightOcclusionChannel);
 
-            UniversalAdditionalLightData additionalLightData = ForwardLights.GetAdditionalLightData(visibleLights[index].light);
+            var additionalLightData = visibleLights[index].light.GetUniversalAdditionalLightData();
             uint lightLayerMask = (uint)additionalLightData.lightLayerMask;
 
             punctualLightBuffer[storeIndex * 6 + 0] = new uint4(FloatToUInt(lightPos.x), FloatToUInt(lightPos.y), FloatToUInt(lightPos.z), FloatToUInt(visibleLights[index].range * visibleLights[index].range));
@@ -1865,7 +1863,7 @@ namespace UnityEngine.Rendering.Universal.Internal
             // tileDeferred might render a lot of point lights in the same draw call.
             // point light shadows require generating cube shadow maps in real-time, requiring extra CPU/GPU resources ; which can become expensive quickly
             return (visibleLight.lightType == LightType.Point && (visibleLight.light == null || visibleLight.light.shadows == LightShadows.None))
-                || (visibleLight.lightType  == LightType.Spot && (visibleLight.light == null || visibleLight.light.shadows == LightShadows.None));
+                || (visibleLight.lightType == LightType.Spot && (visibleLight.light == null || visibleLight.light.shadows == LightShadows.None));
         }
 
         void InitTileDeferredMaterial()

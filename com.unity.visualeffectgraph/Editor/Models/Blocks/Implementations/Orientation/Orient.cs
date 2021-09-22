@@ -81,7 +81,7 @@ namespace UnityEditor.VFX.Block
         private bool canTestStrips => flattenedParent as VFXAbstractParticleOutput; // Cannot check strip in subblock context or not child of a context
         private bool hasStrips => ((VFXAbstractParticleOutput)flattenedParent).HasStrips(); // direct cast as canTestStrips is supposed to have been called priorly
 
-        public override string name { get { return "Orient : " + ObjectNames.NicifyVariableName(mode.ToString()); } }
+        public override string name { get { return "Orient: " + ObjectNames.NicifyVariableName(mode.ToString()); } }
 
         public override VFXContextType compatibleContexts { get { return VFXContextType.Output; } }
         public override VFXDataType compatibleData { get { return VFXDataType.Particle; } }
@@ -321,9 +321,10 @@ axisY = cross(axisZ, axisX);
                 /* Slot of type position has changed from undefined VFXSlot to VFXSlotPosition*/
                 if (GetNbInputSlots() > 0 && !(GetInputSlot(0) is VFXSlotPosition))
                 {
-                    var oldValue = GetInputSlot(0).value;
-                    RemoveSlot(GetInputSlot(0));
-                    AddSlot(VFXSlot.Create(new VFXProperty(typeof(Position), "Position"), VFXSlot.Direction.kInput, oldValue));
+                    VFXSlot oldSlot = GetInputSlot(0);
+                    var oldValue = oldSlot.value;
+                    VFXSlot newSlot = VFXSlot.Create(new VFXProperty(typeof(Position), "Position"), VFXSlot.Direction.kInput, oldValue);
+                    ReplaceSlot(oldSlot, newSlot);
                 }
             }
             base.Sanitize(version);
