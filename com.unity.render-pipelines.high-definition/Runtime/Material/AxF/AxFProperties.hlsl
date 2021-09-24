@@ -134,9 +134,11 @@ float _SpecularAAThreshold;
 // TODO: Fix the code in legacy unity so we can customize the behavior for GI
 float3 _EmissionColor;
 
+CBUFFER_END
+
 // Following three variables are feeded by the C++ Editor for Scene selection
 int _ObjectId;
 int _PassValue;
 float4 _SelectionID;
 
-CBUFFER_END
+
