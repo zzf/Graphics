@@ -9,11 +9,26 @@
 
 #undef SHADEROPTIONS_CAMERA_RELATIVE_RENDERING
 
+// Define the correct matrices
 
+#ifdef DOTS_INSTANCING_ON
 
-#ifndef DOTS_INSTANCING_ON
+#undef glstate_matrix_projection
+#undef UNITY_MATRIX_P
+#undef UNITY_MATRIX_VP
+
+float4x4 glstate_matrix_projection;
+
+#define UNITY_MATRIX_P glstate_matrix_projection
+#define UNITY_MATRIX_VP mul(UNITY_MATRIX_P, UNITY_MATRIX_V)
+
+#else
 
 #undef unity_ObjectToWorld
+#undef unity_MatrixVP
+float4x4 unity_MatrixV;
+float4x4 unity_MatrixVP;
+float4x4 glstate_matrix_projection;
 
 #undef UNITY_MATRIX_M
 #define UNITY_MATRIX_M unity_ObjectToWorld
@@ -21,35 +36,15 @@
 #undef UNITY_MATRIX_I_M
 #define UNITY_MATRIX_I_M Inverse(unity_ObjectToWorld)
 
-#endif
-
-
-#undef unity_MatrixVP
-
-#ifndef DOTS_INSTANCING_ON
-float4x4 unity_MatrixV;
-#endif
-
-#ifndef DOTS_INSTANCING_ON
-float4x4 unity_MatrixVP;
-#endif
-
-float4x4 glstate_matrix_projection;
-
-#ifndef DOTS_INSTANCING_ON
 #undef UNITY_MATRIX_V
 #define UNITY_MATRIX_V unity_MatrixV
-#endif
+
+#undef UNITY_MATRIX_VP
+#define UNITY_MATRIX_VP unity_MatrixVP
 
 #undef UNITY_MATRIX_P
 #define UNITY_MATRIX_P glstate_matrix_projection
 
-#ifndef DOTS_INSTANCING_ON
-#undef UNITY_MATRIX_VP
-#define UNITY_MATRIX_VP unity_MatrixVP
-#else
-#undef UNITY_MATRIX_VP
-#define UNITY_MATRIX_VP mul(UNITY_MATRIX_P, UNITY_MATRIX_V)
 #endif
 
 // Overwrite the SpaceTransforms functions
