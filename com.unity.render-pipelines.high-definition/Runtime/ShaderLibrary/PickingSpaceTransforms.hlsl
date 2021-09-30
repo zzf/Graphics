@@ -14,11 +14,14 @@
 #ifdef DOTS_INSTANCING_ON
 
 #undef glstate_matrix_projection
+#undef UNITY_MATRIX_V
 #undef UNITY_MATRIX_P
 #undef UNITY_MATRIX_VP
 
+float4x4 _DOTSPickingViewMatrix;
 float4x4 glstate_matrix_projection;
 
+#define UNITY_MATRIX_V _DOTSPickingViewMatrix
 #define UNITY_MATRIX_P glstate_matrix_projection
 #define UNITY_MATRIX_VP mul(UNITY_MATRIX_P, UNITY_MATRIX_V)
 
