@@ -29,11 +29,12 @@ CBUFFER_START(UnityTerrain)
 #ifdef DEBUG_DISPLAY
     UNITY_TERRAIN_CB_DEBUG_VARS
 #endif
+CBUFFER_END
+
 #ifdef SCENESELECTIONPASS
     int _ObjectId;
     int _PassValue;
 #endif
-CBUFFER_END
 
 #ifdef UNITY_INSTANCING_ENABLED
     TEXTURE2D(_TerrainHeightmapTexture);
@@ -160,7 +161,7 @@ void GetSurfaceAndBuiltinData(inout FragInputs input, float3 V, inout PositionIn
 
 #ifdef _ALPHATEST_ON
 	ClipHoles(input.texCoord0.xy);
-#endif	
+#endif
 
     // terrain lightmap uvs are always taken from uv0
     input.texCoord1 = input.texCoord2 = input.texCoord0;
