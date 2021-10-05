@@ -156,11 +156,6 @@ Shader "Hidden/Universal Render Pipeline/Picking"
 
             struct Varyings
             {
-                float2 uv                       : TEXCOORD0;
-                DECLARE_LIGHTMAP_OR_SH(lightmapUV, vertexSH, 1);
-                float3 normalWS                 : TEXCOORD3;
-                float3 viewDirWS                : TEXCOORD5;
-                half4 fogFactorAndVertexLight   : TEXCOORD6; // x: fogFactor, yzw: vertex light
                 float4 positionCS               : SV_POSITION;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
@@ -175,27 +170,6 @@ Shader "Hidden/Universal Render Pipeline/Picking"
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
-
-                // normalWS and tangentWS already normalize.
-                // this is required to avoid skewing the direction during interpolation
-                // also required for per-vertex lighting and SH evaluation
-                VertexNormalInputs normalInput = GetVertexNormalInputs(input.normalOS, input.tangentOS);
-
-                half3 viewDirWS = GetWorldSpaceViewDir(vertexInput.positionWS);
-                half3 vertexLight = VertexLighting(vertexInput.positionWS, normalInput.normalWS);
-                half fogFactor = ComputeFogFactor(vertexInput.positionCS.z);
-
-                output.uv = TRANSFORM_TEX(input.texcoord, _BaseMap);
-
-                // already normalized from normal transform to WS.
-                output.normalWS = normalInput.normalWS;
-                output.viewDirWS = viewDirWS;
-
-                OUTPUT_LIGHTMAP_UV(input.lightmapUV, unity_LightmapST, output.lightmapUV);
-                OUTPUT_SH(output.normalWS.xyz, output.vertexSH);
-
-                output.fogFactorAndVertexLight = half4(fogFactor, vertexLight);
-
                 output.positionCS = vertexInput.positionCS;
 
                 return output;
