@@ -153,13 +153,20 @@ struct PickingMeshToPS
 
 float4x4 _DOTSPickingViewMatrix;
 float4x4 _DOTSPickingProjMatrix;
+float4 _DOTSPickingCameraWorldPos;
 
 PickingMeshToPS Vert(AttributesMesh input)
 {
     PickingMeshToPS output;
     UNITY_TRANSFER_INSTANCE_ID(input, output);
 
-    float4 positionWS = mul(UNITY_MATRIX_M, float4(input.positionOS, 1.0));
+    float4x4 objectToWorld = LoadDOTSInstancedData_float4x4_from_float3x4(UNITY_DOTS_INSTANCED_METADATA_NAME(float3x4, unity_ObjectToWorld));
+
+    #if (SHADEROPTIONS_CAMERA_RELATIVE_RENDERING != 0)
+    objectToWorld._m03_m13_m23 -= _DOTSPickingCameraWorldPos.xyz;
+    #endif
+
+    float4 positionWS = mul(objectToWorld, float4(input.positionOS, 1.0));
     float4 positionCS = mul(_DOTSPickingProjMatrix, mul(_DOTSPickingViewMatrix, positionWS));
 
     output.positionCS = positionCS;
