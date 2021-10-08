@@ -2,6 +2,8 @@
 #error SHADERPASS_is_not_correctly_define
 #endif
 
+#if !defined(DOTS_INSTANCING_ON) || !defined(SCENEPICKINGPASS)
+
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/RenderPipeline/ShaderPass/VertMesh.hlsl"
 #if defined(WRITE_DECAL_BUFFER) && !defined(_DISABLE_DECALS)
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Decal/DecalPrepassBuffer.hlsl"
@@ -132,3 +134,44 @@ void Frag(  PackedVaryingsToPS packedInput
 
 #endif // SCENESELECTIONPASS
 }
+
+#else // ========================================================================================================================
+
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/UnityInstancing.hlsl"
+
+struct AttributesMesh
+{
+    float3 positionOS   : POSITION;
+    UNITY_VERTEX_INPUT_INSTANCE_ID
+};
+
+struct PickingMeshToPS
+{
+    float4 positionCS : SV_Position;
+    UNITY_VERTEX_INPUT_INSTANCE_ID
+};
+
+float4x4 _DOTSPickingViewMatrix;
+float4x4 _DOTSPickingProjMatrix;
+
+PickingMeshToPS Vert(AttributesMesh input)
+{
+    PickingMeshToPS output;
+    UNITY_TRANSFER_INSTANCE_ID(input, output);
+
+    float4 positionWS = mul(UNITY_MATRIX_M, float4(input.positionOS, 1.0));
+    float4 positionCS = mul(_DOTSPickingProjMatrix, mul(_DOTSPickingViewMatrix, positionWS));
+
+    output.positionCS = positionCS;
+    return output;
+}
+
+void Frag(PickingMeshToPS input, out float4 outColor : SV_Target0)
+{
+    UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+    UNITY_SETUP_INSTANCE_ID(input);
+
+    outColor = _SelectionID;
+}
+
+#endif
