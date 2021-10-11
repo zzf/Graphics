@@ -139,7 +139,7 @@ void Frag(  PackedVaryingsToPS packedInput
 
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/UnityInstancing.hlsl"
 
-struct AttributesMesh
+struct PickingAttributesMesh
 {
     float3 positionOS   : POSITION;
     UNITY_VERTEX_INPUT_INSTANCE_ID
@@ -151,11 +151,13 @@ struct PickingMeshToPS
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
+#undef unity_ObjectToWorld
+
 float4x4 _DOTSPickingViewMatrix;
 float4x4 _DOTSPickingProjMatrix;
 float4 _DOTSPickingCameraWorldPos;
 
-PickingMeshToPS Vert(AttributesMesh input)
+PickingMeshToPS Vert(PickingAttributesMesh input)
 {
     PickingMeshToPS output;
     UNITY_TRANSFER_INSTANCE_ID(input, output);

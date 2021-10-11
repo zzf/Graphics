@@ -1,7 +1,7 @@
 #ifndef UNITY_PICKING_SPACE_TRANSFORMS_INCLUDED
 #define UNITY_PICKING_SPACE_TRANSFORMS_INCLUDED
 
-#if defined(SCENEPICKINGPASS) || defined(SCENESELECTIONPASS)
+#if !defined(DOTS_INSTANCING_ON) && (defined(SCENEPICKINGPASS) || defined(SCENESELECTIONPASS))
 
 // The picking pass uses custom matrices defined directly from the c++
 // So we have to redefine the space transform functions to overwrite the used matrices
@@ -10,21 +10,6 @@
 #undef SHADEROPTIONS_CAMERA_RELATIVE_RENDERING
 
 // Define the correct matrices
-
-#ifdef DOTS_INSTANCING_ON
-
-#undef UNITY_MATRIX_V
-#undef UNITY_MATRIX_P
-#undef UNITY_MATRIX_VP
-
-float4x4 _DOTSPickingViewMatrix;
-float4x4 _DOTSPickingProjMatrix;
-
-#define UNITY_MATRIX_V _DOTSPickingViewMatrix
-#define UNITY_MATRIX_P _DOTSPickingProjMatrix
-#define UNITY_MATRIX_VP mul(UNITY_MATRIX_P, UNITY_MATRIX_V)
-
-#else
 
 #undef unity_ObjectToWorld
 #undef unity_MatrixVP
@@ -46,8 +31,6 @@ float4x4 glstate_matrix_projection;
 
 #undef UNITY_MATRIX_P
 #define UNITY_MATRIX_P glstate_matrix_projection
-
-#endif
 
 // Overwrite the SpaceTransforms functions
 #define GetObjectToWorldMatrix GetObjectToWorldMatrix_Picking
