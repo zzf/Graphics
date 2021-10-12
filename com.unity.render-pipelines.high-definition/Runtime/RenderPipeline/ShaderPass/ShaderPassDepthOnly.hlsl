@@ -205,6 +205,8 @@ float4x4 LoadWorldToObjectMatrixDOTSPicking()
 PickingVertexOutput Vert(PickingAttributesMesh input)
 {
     PickingVertexOutput output;
+    ZERO_INITIALIZE(PickingVertexOutput, output);
+    UNITY_SETUP_INSTANCE_ID(input);
     UNITY_TRANSFER_INSTANCE_ID(input, output);
 
     float4x4 objectToWorld = LoadObjectToWorldMatrixDOTSPicking();
