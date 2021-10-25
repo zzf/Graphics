@@ -66,8 +66,6 @@ namespace UnityEditor.Rendering.HighDefinition
             public static readonly GUIContent useDLSSCustomProjectIdLabel = EditorGUIUtility.TrTextContent("Use DLSS Custom Project Id", "Set to utilize a custom project Id for the NVIDIA Deep Learning Super Sampling extension.");
             public static readonly GUIContent DLSSProjectIdLabel = EditorGUIUtility.TrTextContent("DLSS Custom Project Id", "The custom project ID string to utilize for the NVIDIA Deep Learning Super Sampling extension.");
 
-            public static readonly GUIContent diffusionProfileSettingsLabel = EditorGUIUtility.TrTextContent("Diffusion Profile Assets");
-
             public static readonly string warningHdrpNotActive = "Project graphics settings do not refer to a HDRP Asset. Check the settings: Graphics > Scriptable Render Pipeline Settings, Quality > Render Pipeline Asset.";
             public static readonly string warningGlobalSettingsMissing = "The Settings property does not contain a valid HDRP Global Settings asset. There might be issues in rendering. Select a valid HDRP Global Settings asset.";
             public static readonly string infoGlobalSettingsMissing = "Select a HDRP Global Settings asset.";

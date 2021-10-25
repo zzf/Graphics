@@ -19,7 +19,8 @@ namespace UnityEngine.Rendering.HighDefinition
             First,
             UpdateMSAA,
             UpdateLensFlare,
-            MovedSupportRuntimeDebugDisplayToGlobalSettings
+            MovedSupportRuntimeDebugDisplayToGlobalSettings,
+            MoveDiffusionProfilesToVolume,
         }
 
         static Version[] skipedStepWhenCreatedFromHDRPAsset = new Version[] { };
@@ -50,6 +51,13 @@ namespace UnityEngine.Rendering.HighDefinition
                 {
                     data.supportRuntimeDebugDisplay = activePipeline.currentPlatformRenderPipelineSettings.m_ObsoleteSupportRuntimeDebugDisplay;
                 }
+#pragma warning restore 618
+            }),
+            MigrationStep.New(Version.MoveDiffusionProfilesToVolume, (HDRenderPipelineGlobalSettings data) =>
+            {
+#pragma warning disable 618 // Type or member is obsolete
+                foreach (var profile in data.m_ObsoleteDiffusionProfileSettingsList)
+                    data.AddDiffusionProfile(profile);
 #pragma warning restore 618
             })
         );
@@ -121,9 +129,9 @@ namespace UnityEngine.Rendering.HighDefinition
                 oldAsset.diffusionProfileSettings.TryToUpgrade();
 
             int oldSize = oldAsset.m_ObsoleteDiffusionProfileSettingsList?.Length ?? 0;
-            System.Array.Resize(ref assetToUpgrade.diffusionProfileSettingsList, oldSize);
+            System.Array.Resize(ref assetToUpgrade.m_ObsoleteDiffusionProfileSettingsList, oldSize);
             for (int i = 0; i < oldSize; ++i)
-                assetToUpgrade.diffusionProfileSettingsList[i] = oldAsset.m_ObsoleteDiffusionProfileSettingsList[i];
+                assetToUpgrade.m_ObsoleteDiffusionProfileSettingsList[i] = oldAsset.m_ObsoleteDiffusionProfileSettingsList[i];
 #pragma warning restore 618
 
             //3. Set version to next & Launch remaining of migration

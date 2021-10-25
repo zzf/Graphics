@@ -44,7 +44,6 @@ namespace UnityEditor.Rendering.HighDefinition
         public SerializedProperty shaderVariantLogLevel;
         public SerializedProperty lensAttenuation;
         public SerializedProperty colorGradingSpace;
-        public SerializedProperty diffusionProfileSettingsList;
         public SerializedProperty supportProbeVolumes;
         public SerializedProperty supportRuntimeDebugDisplay;
 
@@ -134,11 +133,6 @@ namespace UnityEditor.Rendering.HighDefinition
 
             lensAttenuation = serializedObject.FindProperty("lensAttenuationMode");
             colorGradingSpace = serializedObject.Find((HDRenderPipelineGlobalSettings s) => s.colorGradingSpace);
-            diffusionProfileSettingsList = serializedObject.Find((HDRenderPipelineGlobalSettings s) => s.diffusionProfileSettingsList);
-            m_DiffusionProfileUI = new DiffusionProfileSettingsListUI()
-            {
-                drawElement = DrawDiffusionProfileElement
-            };
             supportProbeVolumes = serializedObject.Find((HDRenderPipelineGlobalSettings s) => s.supportProbeVolumes);
             rendererListCulling = serializedObject.FindProperty("rendererListCulling");
 

@@ -70,26 +70,22 @@ namespace UnityEngine.Rendering.HighDefinition
 
         void UpdateCurrentDiffusionProfileSettings(HDCamera hdCamera)
         {
-            var currentDiffusionProfiles = m_GlobalSettings.diffusionProfileSettingsList;
-            var diffusionProfileOverride = hdCamera.volumeStack.GetComponent<DiffusionProfileOverride>();
-
-            // If there is a diffusion profile volume override, we merge diffusion profiles that are overwritten
-            if (diffusionProfileOverride.active && diffusionProfileOverride.diffusionProfiles.value != null)
-            {
-                currentDiffusionProfiles = diffusionProfileOverride.diffusionProfiles.value;
-            }
-
             // The first profile of the list is the default diffusion profile, used either when the diffusion profile
             // on the material isn't assigned or when the diffusion profile can't be displayed (too many on the frame)
             SetDiffusionProfileAtIndex(m_SSSDefaultDiffusionProfile, 0);
             m_SSSDiffusionProfileHashes[0] = DiffusionProfileConstants.DIFFUSION_PROFILE_NEUTRAL_ID;
 
             int i = 1;
-            foreach (var v in currentDiffusionProfiles)
+            var diffusionProfileOverride = hdCamera.volumeStack.GetComponent<DiffusionProfileOverride>();
+            if (diffusionProfileOverride.diffusionProfiles.value != null)
             {
-                if (v == null)
-                    continue;
-                SetDiffusionProfileAtIndex(v, i++);
+                foreach (var v in diffusionProfileOverride.diffusionProfiles.value)
+                {
+                    if (v == null)
+                        continue;
+                    SetDiffusionProfileAtIndex(v, i++);
+                }
+
             }
 
             m_SSSActiveDiffusionProfileCount = i;

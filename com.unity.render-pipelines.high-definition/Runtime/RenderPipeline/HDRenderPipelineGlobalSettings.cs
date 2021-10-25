@@ -784,29 +784,67 @@ namespace UnityEngine.Rendering.HighDefinition
 
         [SerializeField]
         internal ColorGradingSpace colorGradingSpace;
-
-        [SerializeField]
-        internal DiffusionProfileSettings[] diffusionProfileSettingsList = new DiffusionProfileSettings[0];
+        
+        [SerializeField, FormerlySerializedAs("diffusionProfileSettingsList")]
+        internal DiffusionProfileSettings[] m_ObsoleteDiffusionProfileSettingsList;
 
         [SerializeField]
         internal bool rendererListCulling;
 
+        static readonly DiffusionProfileSettings[] kEmptyProfiles = new DiffusionProfileSettings[0];
+        internal DiffusionProfileSettings[] diffusionProfileSettingsList
+        {
+            get
+            {
+                if (instance.volumeProfile != null && instance.volumeProfile.TryGet<DiffusionProfileOverride>(out var overrides))
+                    return overrides.diffusionProfiles.value ?? kEmptyProfiles;
+                return kEmptyProfiles;
+            }
+            set { GetOrCreateDiffusionProfileOverride().diffusionProfiles.value = value; }
+        }
+
+        internal DiffusionProfileOverride GetOrCreateDiffusionProfileOverride()
+        {
+            var volumeProfile = instance.GetOrCreateDefaultVolumeProfile();
+            if (volumeProfile.TryGet<DiffusionProfileOverride>(out var overrides))
+            {
+                if (overrides.diffusionProfiles.value == null)
+                    overrides.diffusionProfiles.value = new DiffusionProfileSettings[0];
+                return overrides;
+            }
+            var component = volumeProfile.Add<DiffusionProfileOverride>(true);
+            component.diffusionProfiles.value = new DiffusionProfileSettings[0];
+            return component;
+        }
+
 #if UNITY_EDITOR
         internal bool AddDiffusionProfile(DiffusionProfileSettings profile)
         {
-            if (diffusionProfileSettingsList.Length < 15)
+            var overrides = GetOrCreateDiffusionProfileOverride();
+            var profiles = overrides.diffusionProfiles.value;
+
+            for (int i = 0; i < profiles.Length; i++)
             {
-                int index = diffusionProfileSettingsList.Length;
-                System.Array.Resize(ref diffusionProfileSettingsList, index + 1);
-                diffusionProfileSettingsList[index] = profile;
-                UnityEditor.EditorUtility.SetDirty(this);
-                return true;
+                if (profiles[i] == null)
+                {
+                    profiles[i] = profile;
+                    return true;
+                }
             }
-            else
+
+            if (profiles.Length >= DiffusionProfileConstants.DIFFUSION_PROFILE_COUNT - 1)
             {
-                Debug.LogErrorFormat("We cannot add the diffusion profile {0} to the HDRP's Global Settings as we only allow 14 custom profiles. Please remove one before adding a new one.", profile.name);
+                Debug.LogErrorFormat("We cannot add the diffusion profile {0} to the HDRP's Global Settings as we only allow {1} custom profiles. Please remove one before adding a new one.", profile.name, DiffusionProfileConstants.DIFFUSION_PROFILE_COUNT - 2);
                 return false;
             }
+
+            int index = profiles.Length;
+            Array.Resize(ref profiles, index + 1);
+            profiles[index] = profile;
+
+            overrides.diffusionProfiles.value = profiles;
+            EditorUtility.SetDirty(this);
+            return true;
         }
 
 #endif
