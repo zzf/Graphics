@@ -1649,6 +1649,6 @@ namespace UnityEngine.Rendering
         public AnimationCurveParameter(AnimationCurve value, bool overrideState = false)
             : base(value, overrideState) { }
 
-        // TODO: Curve interpolation
+        // use TextureCurveParameter to have interpolation
     }
 }

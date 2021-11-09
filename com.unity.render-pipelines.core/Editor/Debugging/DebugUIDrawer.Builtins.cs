@@ -858,6 +858,7 @@ namespace UnityEditor.Rendering
         public override bool OnGUI(DebugUI.Widget widget, DebugState state)
         {
             const float k_ScrollBarHeight = 15;
+            const float k_Padding = 2;
 
             var w = Cast<DebugUI.Table>(widget);
             var header = w.Header;
@@ -891,22 +892,18 @@ namespace UnityEditor.Rendering
                 for (int r = 0; r < w.children.Count; r++)
                 {
                     var row = Cast<DebugUI.Container>(w.children[r]);
-                    rowRect.x = contentRect.x;
-                    rowRect.width = columns[0].width;
+                    rowRect.x = contentRect.x + k_Padding;
+                    rowRect.width = columns[0].width - 2 * k_Padding;
                     rowRect.height = (row is DebugUI.Table.Row tableRow) ? GetRowHeight(tableRow, visible) : EditorGUIUtility.singleLineHeight;
 
-                    rowRect.xMin += 2;
-                    rowRect.xMax -= 2;
                     EditorGUI.LabelField(rowRect, GUIContent.none, EditorGUIUtility.TrTextContent(row.displayName), DebugWindow.Styles.centeredLeft);
-                    rowRect.xMin -= 2;
-                    rowRect.xMax += 2;
 
                     using (new EditorGUI.DisabledScope(w.isReadOnly))
                     {
                         for (int c = 1; c < visible.Length; c++)
                         {
-                            rowRect.x += rowRect.width;
-                            rowRect.width = columns[visible[c]].width;
+                            rowRect.x += rowRect.width + 2 * k_Padding;
+                            rowRect.width = columns[visible[c]].width - 2 * k_Padding;
                             DisplayChild(rowRect, row.children[visible[c] - 1]);
                         }
                     }
@@ -952,8 +949,6 @@ namespace UnityEditor.Rendering
 
         internal void DisplayChild(Rect rect, DebugUI.Widget child)
         {
-            rect.xMin += 2;
-            rect.xMax -= 2;
             if (child.GetType() == typeof(DebugUI.Value))
             {
                 var widget = Cast<DebugUI.Value>(child);
@@ -978,6 +973,11 @@ namespace UnityEditor.Rendering
             {
                 var widget = Cast<DebugUI.ObjectListField>(child);
                 DebugUIDrawerObjectListField.DoObjectList(rect, widget, widget.GetValue());
+            }
+            else if (child.GetType() == typeof(DebugUI.TextureCurveField))
+            {
+                var widget = Cast<DebugUI.TextureCurveField>(child);
+                EditorGUI.CurveField(rect, widget.GetValue().animationCurve);
             }
         }
     }

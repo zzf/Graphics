@@ -1742,84 +1742,6 @@ namespace UnityEngine.Rendering.HighDefinition
 
                 if (data.volumeDebugSettings.selectedCameraIndex != 0)
                 {
-                    DebugUI.Widget makeWidget(string name, VolumeParameter param)
-                    {
-                        if (param == null)
-                            return new DebugUI.Value() { displayName = name, getter = () => "-" };
-
-                        // Special overrides
-                        if (param.GetType() == typeof(ColorParameter))
-                        {
-                            var p = (ColorParameter)param;
-                            return new DebugUI.ColorField()
-                            {
-                                displayName = name,
-                                hdr = p.hdr,
-                                showAlpha = p.showAlpha,
-                                getter = () => p.value,
-                                setter = _ => { }
-                            };
-                        }
-
-                        if (param.GetType() == typeof(BoolParameter))
-                        {
-                            var p = (BoolParameter)param;
-                            return new DebugUI.BoolField()
-                            {
-                                displayName = name,
-                                getter = () => p.value,
-                                setter = _ => { }
-                            };
-                        }
-
-                        if (param.GetType() == typeof(DiffusionProfileSettingsParameter))
-                        {
-                            var p = (DiffusionProfileSettingsParameter)param;
-                            return new DebugUI.ObjectListField()
-                            {
-                                displayName = name,
-                                getter = () => p.value,
-                                type = typeof(DiffusionProfileSettings)
-                            };
-                        }
-
-                        // For parameters that do not override `ToString`
-                        var property = param.GetType().GetProperty("value");
-                        var toString = property.PropertyType.GetMethod("ToString", Type.EmptyTypes);
-                        if ((toString == null) || (toString.DeclaringType == typeof(object)) || (toString.DeclaringType == typeof(UnityEngine.Object)))
-                        {
-                            // Check if the parameter has a name
-                            var nameProp = property.PropertyType.GetProperty("name");
-                            if (nameProp == null)
-                                return new DebugUI.Value() { displayName = name, getter = () => "Debug view not supported" };
-
-                            // Return the parameter name
-                            return new DebugUI.Value()
-                            {
-                                displayName = name,
-                                getter = () =>
-                                {
-                                    var value = property.GetValue(param);
-                                    if (value == null || value.Equals(null))
-                                        return "None";
-                                    var valueString = nameProp.GetValue(value);
-                                    return valueString == null ? "None" : valueString;
-                                }
-                            };
-                        }
-
-                        // Call the ToString method
-                        return new DebugUI.Value()
-                        {
-                            displayName = name,
-                            getter = () =>
-                            {
-                                var value = property.GetValue(param);
-                                return value == null ? "None" : value.ToString();
-                            }
-                        };
-                    }
-
                     Type selectedType = data.volumeDebugSettings.selectedComponentType;
                     var stackComponent = data.volumeDebugSettings.selectedCameraVolumeStack.GetComponent(selectedType);
 
@@ -1923,7 +1845,7 @@ namespace UnityEngine.Rendering.HighDefinition
                             row = new DebugUI.Table.Row()
                             {
                                 displayName = fieldName,
-                                children = { makeWidget("Interpolated Value", stackComponent.parameters[currentParam]) }
+                                children = { MakeWidgetFromVolumeParameter("Interpolated Value", stackComponent.parameters[currentParam]) }
                             };
 
                             foreach (var volume in volumes)
@@ -1932,10 +1854,10 @@ namespace UnityEngine.Rendering.HighDefinition
                                 var profile = volume.HasInstantiatedProfile() ? volume.profile : volume.sharedProfile;
                                 if (profile.TryGet(selectedType, out VolumeComponent component) && component.parameters[currentParam].overrideState)
                                     param = component.parameters[currentParam];
-                                row.children.Add(makeWidget(profile.name, param));
+                                row.children.Add(MakeWidgetFromVolumeParameter(profile.name, param));
                             }
 
-                            row.children.Add(makeWidget("Default Value", inst.parameters[currentParam]));
+                            row.children.Add(MakeWidgetFromVolumeParameter("Default Value", inst.parameters[currentParam]));
                             rows.Add(row);
                         }
 
@@ -2279,6 +2201,81 @@ namespace UnityEngine.Rendering.HighDefinition
                 (data.lightingDebugSettings.overrideAlbedo || data.lightingDebugSettings.overrideNormal || data.lightingDebugSettings.overrideSmoothness || data.lightingDebugSettings.overrideSpecularColor || data.lightingDebugSettings.overrideEmissiveColor || data.lightingDebugSettings.overrideAmbientOcclusion) ||
                 (debugGBuffer == DebugViewGbuffer.BakeDiffuseLightingWithAlbedoPlusEmissive) || (data.lightingDebugSettings.debugLightFilterMode != DebugLightFilterMode.None) ||
                 (data.fullScreenDebugMode == FullScreenDebugMode.PreRefractionColorPyramid || data.fullScreenDebugMode == FullScreenDebugMode.FinalColorPyramid || data.fullScreenDebugMode == FullScreenDebugMode.TransparentScreenSpaceReflections || data.fullScreenDebugMode == FullScreenDebugMode.ScreenSpaceReflections || data.fullScreenDebugMode == FullScreenDebugMode.ScreenSpaceReflectionsPrev || data.fullScreenDebugMode == FullScreenDebugMode.ScreenSpaceReflectionsAccum || data.fullScreenDebugMode == FullScreenDebugMode.LightCluster || data.fullScreenDebugMode == FullScreenDebugMode.ScreenSpaceShadows || data.fullScreenDebugMode == FullScreenDebugMode.NanTracker || data.fullScreenDebugMode == FullScreenDebugMode.ColorLog) || data.fullScreenDebugMode == FullScreenDebugMode.ScreenSpaceGlobalIllumination || data.fullScreenDebugMode == FullScreenDebugMode.VolumetricClouds;
+        }
+
+        DebugUI.Widget MakeWidgetFromVolumeParameter(string name, VolumeParameter parameter)
+        {
+            if (parameter == null)
+                return new DebugUI.Value() { displayName = name, getter = () => "-" };
+
+            switch (parameter)
+            {
+                case BoolParameter p:
+                    return new DebugUI.BoolField()
+                    {
+                        displayName = name,
+                        getter = () => p.value,
+                        setter = _ => { }
+                    };
+                case ColorParameter p:
+                    return new DebugUI.ColorField()
+                    {
+                        displayName = name,
+                        hdr = p.hdr,
+                        showAlpha = p.showAlpha,
+                        getter = () => p.value,
+                        setter = _ => { }
+                    };
+                case DiffusionProfileSettingsParameter p:
+                    return new DebugUI.ObjectListField()
+                    {
+                        displayName = name,
+                        getter = () => p.value,
+                        type = typeof(DiffusionProfileSettings)
+                    };
+                case TextureCurveParameter p:
+                    return new DebugUI.TextureCurveField()
+                    {
+                        displayName = name,
+                        getter = () => p.value
+                    };
+            }
+
+            // For parameters that do not override `ToString`
+            var property = parameter.GetType().GetProperty("value");
+            var toString = property.PropertyType.GetMethod("ToString", Type.EmptyTypes);
+            if ((toString == null) || (toString.DeclaringType == typeof(object)) || (toString.DeclaringType == typeof(UnityEngine.Object)))
+            {
+                // Check if the parameter has a name
+                var nameProp = property.PropertyType.GetProperty("name");
+                if (nameProp == null)
+                    return new DebugUI.Value() { displayName = name, getter = () => "Debug view not supported" };
+
+                // Return the parameter name
+                return new DebugUI.Value()
+                {
+                    displayName = name,
+                    getter = () =>
+                    {
+                        var value = property.GetValue(parameter);
+                        if (value == null || value.Equals(null))
+                            return "None";
+                        var valueString = nameProp.GetValue(value);
+                        return valueString == null ? "None" : valueString;
+                    }
+                };
+            }
+
+            // Call the ToString method
+            return new DebugUI.Value()
+            {
+                displayName = name,
+                getter = () =>
+                {
+                    var value = property.GetValue(parameter);
+                    return value == null ? "None" : value.ToString();
+                }
+            };
         }
     }
 }

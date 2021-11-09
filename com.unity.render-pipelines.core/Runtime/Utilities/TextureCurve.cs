@@ -10,6 +10,7 @@ namespace UnityEngine.Rendering
     //   - Looping support (infinite curve)
     //   - Zero-value curve
     //   - Cheaper length property
+    //   - Curve interpolation support
 
     /// <summary>
     /// A wrapper around <c>AnimationCurve</c> to automatically bake it into a texture.
@@ -39,10 +40,15 @@ namespace UnityEngine.Rendering
         AnimationCurve m_Curve;
 
         AnimationCurve m_LoopingCurve;
+        AnimationCurve m_InterpolatedCurve;
         Texture2D m_Texture;
 
         bool m_IsCurveDirty;
         bool m_IsTextureDirty;
+        bool m_CurveIsInterpolated;
+
+        // Do not modify this curve directly, accessible for debug drawing only
+        internal AnimationCurve animationCurve => m_Curve;
 
         /// <summary>
         /// Retrieves the key at index.
@@ -60,6 +66,14 @@ namespace UnityEngine.Rendering
         /// <param name="bounds">The boundaries of the curve.</param>
         public TextureCurve(AnimationCurve baseCurve, float zeroValue, bool loop, in Vector2 bounds)
             : this(baseCurve.keys, zeroValue, loop, bounds) { }
+
+        /// <summary>
+        /// Creates a new <see cref="TextureCurve"/> from an arbitrary number of keyframes.
+        /// </summary>
+        /// <param name="keys">An array of Keyframes used to define the curve.</param>
+        /// <param name="zeroValue">The default value to use when the curve doesn't have any key.</param>
+        public TextureCurve(Keyframe[] keys, float zeroValue = 0.0f)
+            : this(keys, zeroValue, false, Vector2.zero) { }
 
         /// <summary>
         /// Creates a new <see cref="TextureCurve"/> from an arbitrary number of keyframes.
@@ -107,6 +121,7 @@ namespace UnityEngine.Rendering
         {
             m_IsCurveDirty = true;
             m_IsTextureDirty = true;
+            m_CurveIsInterpolated = false;
         }
 
         static GraphicsFormat GetTextureFormat()
@@ -164,7 +179,11 @@ namespace UnityEngine.Rendering
                 return m_ZeroValue;
 
             if (!m_Loop || length == 1)
+            {
+                if (m_CurveIsInterpolated)
+                    return m_InterpolatedCurve.Evaluate(time);
                 return m_Curve.Evaluate(time);
+            }
 
             if (m_IsCurveDirty)
             {
@@ -258,6 +277,14 @@ namespace UnityEngine.Rendering
         /// </summary>
         public override void Release() => m_Value.Release();
 
-        // TODO: TextureCurve interpolation
+        /*
+        public override void Interp(TextureCurve from, TextureCurve to, float t)
+        {
+            if (t == 0.0f) value = from;
+            if (t == 1.0f) value = to;
+            Debug.Log(t);
+            value = from;
+        }
+        */
     }
 }

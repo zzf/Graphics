@@ -99,6 +99,7 @@ namespace UnityEngine.Rendering
         /// Boolean field.
         /// </summary>
         public class BoolField : Field<bool> { }
+
         /// <summary>
         /// Boolean field with history.
         /// </summary>
@@ -548,6 +549,11 @@ namespace UnityEngine.Rendering
             /// </summary>
             public Type type = typeof(Object);
         }
+
+        /// <summary>
+        /// TextureCurve field.
+        /// </summary>
+        public class TextureCurveField : Field<TextureCurve> { }
 
         /// <summary>
         /// Simple message box widget, providing a couple of different styles.
