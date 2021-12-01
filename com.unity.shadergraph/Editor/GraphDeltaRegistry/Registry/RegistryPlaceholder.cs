@@ -122,7 +122,8 @@ namespace UnityEditor.ShaderGraph.Registry
 
         class AddNode : Defs.INodeDefinitionBuilder
         {
-            public RegistryKey GetRegistryKey() => new RegistryKey { Name = "Add", Version = 1 };
+            public static RegistryKey StaticRegistryKey => new RegistryKey { Name = "Add", Version = 1 };
+            public RegistryKey GetRegistryKey() => StaticRegistryKey;
             public RegistryFlags GetRegistryFlags() => RegistryFlags.Func;
 
             public void BuildNode(INodeReader userData, INodeWriter nodeWriter, Registry registry)
