@@ -11,7 +11,7 @@ namespace UnityEditor.ShaderGraph.LegacyGraphUpgrader
         public void Register(INodeUpgraderRegistration register)
         {
             // can create more complex upgraders that handle multiple node types
-            register.HandleNodeType(typeof(UnityEditor.ShaderGraph.AddNode));
+            register.HandleNodeTypes(typeof(UnityEditor.ShaderGraph.AddNode));
         }
 
         public void UpgradeNode(AbstractMaterialNode sourceNode, INodeUpgraderContext context)
@@ -30,16 +30,16 @@ namespace UnityEditor.ShaderGraph.LegacyGraphUpgrader
         void Register(INodeUpgraderRegistration register);
 
         // create some set of dest nodes that are equivalent to the source node
-        //      setup node internal state appropriately
-        //      connect the dest nodes appropriately to each other
-        //      provide mappings from source node slot => dest node slot
-        //      (this is used to upgrade existing connections and inline values)
+        // * setup node internal state appropriately
+        // * connect the dest nodes appropriately to each other
+        // * provide mappings from source node slot => dest node slot
+        //   (this is used to upgrade existing connections and inline slot values)
         void UpgradeNode(AbstractMaterialNode sourceNode, INodeUpgraderContext context);
     }
 
     public interface INodeUpgraderRegistration
     {
-        void HandleNodeType(Type nodeType);
+        void HandleNodeTypes(params Type[] nodeTypes);
     }
 
     public interface INodeUpgraderContext
@@ -168,9 +168,10 @@ namespace UnityEditor.ShaderGraph.LegacyGraphUpgrader
         // Dictionary<AbstractShaderProperty, IProperty> propertyMap;
 
         INodeUpgrader currentUpgrader;
-        void INodeUpgraderRegistration.HandleNodeType(Type nodeType)
+        void INodeUpgraderRegistration.HandleNodeType(Type[] nodeTypes)
         {
-            nodeUpgraders.Add(nodeType, currentUpgrader);
+            foreach (var nodeType in nodeTypes)
+                nodeUpgraders.Add(nodeType, currentUpgrader);
         }
 
         void BuildNodeUpgraders()
@@ -227,7 +228,7 @@ namespace UnityEditor.ShaderGraph.LegacyGraphUpgrader
             // TODO
         }
 
-        void UpgradeSourceNode(AbstractMaterialNode sourceNode)
+        void UpgradeNode(AbstractMaterialNode sourceNode)
         {
             var nodeType = sourceNode.GetType();
             if (nodeUpgraders.TryGetValue(nodeType, out INodeUpgrader nodeUpgrader))
@@ -454,7 +455,7 @@ namespace UnityEditor.ShaderGraph.LegacyGraphUpgrader
 
             // Copy Nodes
             foreach (var sourceNode in sourceGraph.GetNodes<AbstractMaterialNode>())
-                UpgradeSourceNode(sourceNode);
+                UpgradeNode(sourceNode);
 
             // Copy Notes
             foreach (var sourceNote in sourceGraph.stickyNotes)
