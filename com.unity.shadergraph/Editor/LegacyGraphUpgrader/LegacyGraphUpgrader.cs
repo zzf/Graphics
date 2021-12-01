@@ -16,6 +16,8 @@ namespace UnityEditor.ShaderGraph.LegacyGraphUpgrader
 
         public void UpgradeNode(AbstractMaterialNode sourceNode, INodeUpgraderContext context)
         {
+            // upgrader can create multiple nodes if needed (if nodes split on upgrade)
+            // upgrader does not have to handle creating nodes for slot defaults -- that is done automatically
             var destNode = context.CreateNode(AddNode.StaticRegistryKey);
             context.MapSlot(0, destNode, "In0");
             context.MapSlot(1, destNode, "In1");
@@ -53,6 +55,7 @@ namespace UnityEditor.ShaderGraph.LegacyGraphUpgrader
         // override a slot mapping (if something special needs to happen)
         // if not provided, the default mapping will be assumed
         // (connects to equivalent port on the first created node)
+        void MapSlot(int slotId, INodeWriter destNode, string portKey);
         void MapSlot(MaterialSlot sourceSlot, INodeWriter destNode, string portKey);
         void MapSlot(SlotReference sourceSlot, INodeWriter destNode, string portKey);
     }
@@ -185,6 +188,43 @@ namespace UnityEditor.ShaderGraph.LegacyGraphUpgrader
                 }
                 currentUpgrader = null;
             }
+        }
+
+        void UpgradeProperty(AbstractShaderProperty sourceProperty)
+        {
+            // TODO (need property representation in dest graph)
+            // var propType = sourceProperty.GetType();
+            // destGraph.AddProperty(...);
+        }
+
+        void UpgradeKeyword(ShaderKeyword sourceKeyword)
+        {
+            // TODO
+        }
+
+        void UpgradeDropdown(ShaderDropdown sourceDropdown)
+        {
+            // TODO
+        }
+
+        void UpgradeCategory(CategoryData sourceCategory)
+        {
+            // TODO
+        }
+
+        void UpgradeGroup(GroupData sourceGroup)
+        {
+            // TODO
+        }
+
+        void UpgradeNote(StickyNoteData sourceNote)
+        {
+            // TODO
+        }
+
+        void UpgradePreviewData(InspectorPreviewData previewData)
+        {
+            // TODO
         }
 
         void UpgradeSourceNode(AbstractMaterialNode sourceNode)
@@ -380,25 +420,49 @@ namespace UnityEditor.ShaderGraph.LegacyGraphUpgrader
 
             BuildNodeUpgraders();
 
+            // Setup graph global data
+                // sourceGraph.graphDefaultPrecision
+                // sourceGraph.isSubGraph
+                // sourceGraph.previewMode
+                // sourceGraph.outputNode       // for sub graphs only
+                // sourceGraph.path             // ??
+
             // Copy Targets
+            // TODO: unless we use the same json serialization format, we're not going to be able to transfer unknown targets
+            // sourceGraph.activeTargets
+            // sourceGraph.allPotentialTargets
+
+            // Copy Block Nodes (?)
+            // sourceGraph.vertexContext
+            // sourceGraph.fragmentContext
 
             // Copy Properties
+            foreach (var sourceProperty in sourceGraph.properties)
+                UpgradeProperty(sourceProperty);
 
             // Copy Keywords
+            foreach (var sourceKeyword in sourceGraph.keywords)
+                UpgradeKeyword(sourceKeyword);
 
-            // Copy Dropdowns
+            // Copy Dropdowns (should be in subgraphs only?)
+            foreach (var sourceDropdown in sourceGraph.dropdowns)
+                UpgradeDropdown(sourceDropdown);
 
             // Copy Categories
+            foreach (var sourceCategory in sourceGraph.categories)
+                UpgradeCategory(sourceCategory);
 
             // Copy Nodes
-            foreach (var sourceNode in sourceGraph.GetNodes())
-            {
+            foreach (var sourceNode in sourceGraph.GetNodes<AbstractMaterialNode>())
                 UpgradeSourceNode(sourceNode);
-            }
 
             // Copy Notes
+            foreach (var sourceNote in sourceGraph.stickyNotes)
+                UpgradeNote(sourceNote);
 
-            // Copy Groups?
+            // Copy Groups
+            foreach (var sourceGroup in sourceGraph.groups)
+                UpgradeGroup(sourceGroup);
 
             // Copy Edges
             foreach (var sourceEdge in sourceGraph.edges)
@@ -432,6 +496,8 @@ namespace UnityEditor.ShaderGraph.LegacyGraphUpgrader
                     }
                 }
             }
+
+            UpgradePreviewData(sourceGraph.previewData);
 
             return destGraph;
         }
