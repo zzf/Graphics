@@ -186,6 +186,7 @@ struct BSDFData
     float iridescenceCoatFixupTIR;
     float iridescenceCoatFixupTIRClamp;
     uint diffusionProfileIndex;
+    float3 shapeParam;
     float subsurfaceMask;
     float thickness;
     bool useThickObjectMode;

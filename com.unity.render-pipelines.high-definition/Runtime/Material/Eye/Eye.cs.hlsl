@@ -84,6 +84,7 @@ struct BSDFData
     float perceptualRoughness;
     float2 mask;
     uint diffusionProfileIndex;
+    float3 shapeParam;
     float subsurfaceMask;
     float roughness;
 };

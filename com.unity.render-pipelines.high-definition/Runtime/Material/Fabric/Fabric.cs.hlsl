@@ -86,6 +86,7 @@ struct BSDFData
     float3 geomNormalWS;
     float perceptualRoughness;
     uint diffusionProfileIndex;
+    float3 shapeParam;
     float subsurfaceMask;
     float thickness;
     bool useThickObjectMode;

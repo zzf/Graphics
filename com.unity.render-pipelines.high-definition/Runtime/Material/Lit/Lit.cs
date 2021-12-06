@@ -138,6 +138,7 @@ namespace UnityEngine.Rendering.HighDefinition
 
             // SSS
             public uint diffusionProfileIndex;
+            public Vector3 shapeParam;
             [SurfaceDataAttributes(precision = FieldPrecision.Real)]
             public float subsurfaceMask;
 

@@ -17,7 +17,9 @@
 //-----------------------------------------------------------------------------
 
 // Choose between Lambert diffuse and Disney diffuse (enable only one of them)
-// #define USE_DIFFUSE_LAMBERT_BRDF
+#if SHADEROPTIONS_QUALITY_LITE
+#define USE_DIFFUSE_LAMBERT_BRDF
+#endif
 
 #define LIT_USE_GGX_ENERGY_COMPENSATION
 
@@ -1086,6 +1088,9 @@ struct PreLightData
     float    coatReflectionWeight;   // like reflectionHierarchyWeight but used to distinguish coat contribution between SSR/IBL lighting
     float3x3 ltcTransformCoat;       // Inverse transformation for GGX                                 (4x VGPRs)
 
+    /// SSS
+    float curvature;
+
 #if HAS_REFRACTION
     // Refraction
     float3 transparentRefractV;      // refracted view vector after exiting the shape
@@ -1113,6 +1118,10 @@ PreLightData GetPreLightData(float3 V, PositionInputs posInput, inout BSDFData b
     float3 N = bsdfData.normalWS;
     preLightData.NdotV = dot(N, V);
     preLightData.iblPerceptualRoughness = bsdfData.perceptualRoughness;
+
+#if SHADEROPTIONS_QUALITY_LITE
+    preLightData.curvature = length(fwidth(bsdfData.geomNormalWS)) / length(fwidth(posInput.positionWS));
+#endif
 
     float clampedNdotV = ClampNdotV(preLightData.NdotV);
 
@@ -1306,7 +1315,11 @@ bool IsNonZeroBSDF(float3 V, float3 L, PreLightData preLightData, BSDFData bsdfD
 {
     float NdotL = dot(bsdfData.normalWS, L);
 
+#if SHADEROPTIONS_QUALITY_LITE
+    return HasFlag(bsdfData.materialFeatures, MATERIALFEATUREFLAGS_LIT_SUBSURFACE_SCATTERING) || (NdotL > 0.0);
+#else
     return HasFlag(bsdfData.materialFeatures, MATERIALFEATUREFLAGS_LIT_TRANSMISSION) || (NdotL > 0.0);
+#endif
 }
 
 CBSDF EvaluateBSDF(float3 V, float3 L, PreLightData preLightData, BSDFData bsdfData)
@@ -1407,6 +1420,12 @@ CBSDF EvaluateBSDF(float3 V, float3 L, PreLightData preLightData, BSDFData bsdfD
     // The compiler should optimize these. Can revisit later if necessary.
     cbsdf.diffR = diffTerm * clampedNdotL;
     cbsdf.diffT = diffTerm * flippedNdotL;
+
+#if SHADEROPTIONS_QUALITY_LITE
+    if (HasFlag(bsdfData.materialFeatures, MATERIALFEATUREFLAGS_LIT_SUBSURFACE_SCATTERING) && _EnableSubsurfaceScattering)
+        cbsdf.diffR = diffTerm * IntegrateDiffuseScattering(NdotL, preLightData.curvature, bsdfData.shapeParam);
+        //cbsdf.diffR = diffTerm * IntegrateDiffuseScattering(NdotL, 1.0f, bsdfData.shapeParam, 20);
+#endif
 
     // Probably worth branching here for perf reasons.
     // This branch will be optimized away if there's no transmission.

@@ -56,3 +56,19 @@ void SampleBurleyDiffusionProfile(float u, float rcpS, out float r, out float rc
     r      = x * rcpS;
     rcpPdf = (8 * PI * rcpS) * rcpExp; // (8 * Pi) / s / (Exp[-s * r / 3] + Exp[-s * r])
 }
+
+float Gaussian(float v, float r)
+{
+	return 1.0f / sqrt(2.0f * PI * v) * exp(-r * r / (2.0f * v));
+}
+
+// GPU Gems 3 - Chapter 14. Advanced Techniques for Realistic Real-Time Skin Rendering
+float3 EvalGaussianDiffusionProfile(float r)
+{
+	return Gaussian(0.0064f * 1.414f, r) * float3(0.233f, 0.455f, 0.649f) +
+		Gaussian(0.0484f * 1.414f, r) * float3(0.100f, 0.336f, 0.344f) +
+		Gaussian(0.1870f * 1.414f, r) * float3(0.118f, 0.198f, 0.000f) +
+		Gaussian(0.5670f * 1.414f, r) * float3(0.113f, 0.007f, 0.007f) +
+		Gaussian(1.9900f * 1.414f, r) * float3(0.358f, 0.004f, 0.000f) +
+		Gaussian(7.4100f * 1.414f, r) * float3(0.078f, 0.000f, 0.000f);
+}

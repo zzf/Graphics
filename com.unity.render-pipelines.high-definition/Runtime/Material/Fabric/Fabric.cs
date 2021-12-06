@@ -103,6 +103,7 @@ namespace UnityEngine.Rendering.HighDefinition
 
             // SSS
             public uint diffusionProfileIndex;
+            public Vector3 shapeParam;
             public float subsurfaceMask;
 
             // Transmission

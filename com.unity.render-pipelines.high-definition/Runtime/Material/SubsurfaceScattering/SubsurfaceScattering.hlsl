@@ -21,6 +21,9 @@ uint GetSubsurfaceScatteringTexturingMode(int diffusionProfile)
 #elif defined(SHADERPASS) && ((SHADERPASS == SHADERPASS_RAYTRACING_INDIRECT) || (SHADERPASS == SHADERPASS_RAYTRACING_FORWARD))
     // If the SSS pass is executed, we know we have SSS enabled.
     bool enableSss = false;
+#elif SHADEROPTIONS_QUALITY_LITE
+    // For HDRP Lite, SSS is not done in screenspace
+    bool enableSss = false;
 #else
     bool enableSss = _EnableSubsurfaceScattering != 0;
 #endif
@@ -171,8 +174,11 @@ void FillMaterialSSS(uint diffusionProfileIndex, float subsurfaceMask, inout BSD
 {
     bsdfData.diffusionProfileIndex = diffusionProfileIndex;
     bsdfData.fresnel0 = _TransmissionTintsAndFresnel0[diffusionProfileIndex].a;
+    bsdfData.shapeParam = _ShapeParamsAndMaxScatterDists[diffusionProfileIndex].rgb;
     bsdfData.subsurfaceMask = subsurfaceMask;
+#if !SHADEROPTIONS_QUALITY_LITE
     bsdfData.materialFeatures |= MATERIALFEATUREFLAGS_SSS_OUTPUT_SPLIT_LIGHTING;
+#endif
     bsdfData.materialFeatures |= GetSubsurfaceScatteringTexturingMode(diffusionProfileIndex) << MATERIALFEATUREFLAGS_SSS_TEXTURING_MODE_OFFSET;
 }
 
@@ -248,3 +254,38 @@ uint FindDiffusionProfileIndex(uint diffusionProfileHash)
 }
 
 #endif
+
+float3 IntegrateDiffuseScattering(float NdotL, float radius, float3 shapeParam, int steps)
+{
+	float limit = PI * 0.5f;
+	float inc = 2.0f * limit / (float)steps;
+
+	float3 totalWeights = 0.0f;
+	float3 totalLight = 0.0f;
+    float theta = acos(NdotL);
+	for (float x = -limit; x <= limit; x += inc)
+	{
+		float diffuse = saturate(cos(theta + x));
+		float dist = abs(2.0f * radius * sin(x * 0.5f));
+		float3 weights = EvalBurleyDiffusionProfile(dist, shapeParam);
+		//float3 weights = EvalGaussianDiffusionProfile(dist);
+
+		totalWeights += weights;
+		totalLight += diffuse * weights;
+	}
+	return saturate(totalLight / totalWeights);
+}
+
+float3 IntegrateDiffuseScattering(float NdotL, float radius, float3 shapeParam)
+{
+    float x = NdotL;
+    float y = 1.0f - radius;
+    float s = 0.5f / shapeParam + 0.5f;
+
+	float fit_min_scat = saturate(2 * x - 1);
+	float fit_a = 0.42 * exp(x) - 0.42;
+	float x3 = x * x * x;
+	float fit_b = x < 0.5538 ? 5*x3*x3 : 1.86 * x - 0.889;
+	float lighting = lerp(fit_b, fit_a, y * y);
+	return lerp(fit_min_scat, lighting, s);
+}
