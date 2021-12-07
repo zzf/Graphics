@@ -99,7 +99,7 @@ SAMPLER(sampler_LayerInfluenceMaskMap);
 CBUFFER_START(UnityPerMaterial)
 
 float _Radius;
-float3 _ScatteringDistance;
+float3 _Blur;
 
 // shared constant between lit and layered lit
 float _AlphaCutoff;

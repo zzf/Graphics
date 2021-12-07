@@ -155,7 +155,7 @@ namespace UnityEditor.Rendering.HighDefinition
         // Properties common to Unlit and Lit
         MaterialProperty surfaceType = null;
         MaterialProperty options = null;
-        MaterialProperty radius = null, scatt = null;
+        MaterialProperty radius = null, blur = null;
 
         MaterialProperty alphaCutoffEnable = null;
         MaterialProperty useShadowThreshold = null;
@@ -290,6 +290,7 @@ namespace UnityEditor.Rendering.HighDefinition
             surfaceType = FindProperty(kSurfaceType);
             options = FindProperty("_Options");
             radius = FindProperty("_Radius");
+            blur = FindProperty("_Blur");
             useShadowThreshold = FindProperty(kUseShadowThreshold);
             alphaCutoffEnable = FindProperty(kAlphaCutoffEnabled);
             alphaCutoff = FindProperty(kAlphaCutoff);
@@ -387,6 +388,7 @@ namespace UnityEditor.Rendering.HighDefinition
                     materialEditor.ShaderProperty(radius, "Radius");
                     if (radius.floatValue < 0.0f)
                         radius.floatValue = 0.0f;
+                    materialEditor.ShaderProperty(blur, "Blur");
                 }
             }
 

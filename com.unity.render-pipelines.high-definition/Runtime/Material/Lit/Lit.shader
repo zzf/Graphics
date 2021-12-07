@@ -34,6 +34,7 @@ Shader "HDRP/Lit"
         [HideInInspector] _HeightCenter("Height Center", Range(0.0, 1.0)) = 0.5 // In texture space
 
         _Radius("radius", Float) = 1
+        _Blur("blur", Color) = (1, 1, 1, 1)
         [KeywordEnum(Default, Lite)] _Options("Shader Options", Int) = 0
         [Enum(MinMax, 0, Amplitude, 1)] _HeightMapParametrization("Heightmap Parametrization", Int) = 0
         // These parameters are for vertex displacement/Tessellation

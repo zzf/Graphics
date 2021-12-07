@@ -255,19 +255,21 @@ uint FindDiffusionProfileIndex(uint diffusionProfileHash)
 
 #endif
 
-float3 IntegrateDiffuseScattering(float NdotL, float radius, float3 shapeParam, int steps)
+float3 IntegrateDiffuseScattering(float3 NdotL, float radius, float3 shapeParam, int steps)
 {
 	float limit = PI * 0.5f;
 	float inc = 2.0f * limit / (float)steps;
 
 	float3 totalWeights = 0.0f;
 	float3 totalLight = 0.0f;
-    float theta = acos(NdotL);
+    float3 theta = acos(NdotL);
 	for (float x = -limit; x <= limit; x += inc)
 	{
-		float diffuse = saturate(cos(theta + x));
-		float dist = abs(2.0f * radius * sin(x * 0.5f));
-		float3 weights = EvalBurleyDiffusionProfile(dist, shapeParam);
+		float3 diffuse = saturate(cos(theta + x));
+		float3 dist = abs(2.0f * radius * sin(x * 0.5f));
+		float3 weights = float3(EvalBurleyDiffusionProfile(dist.r, shapeParam).r,
+		                        EvalBurleyDiffusionProfile(dist.g, shapeParam).g,
+		                        EvalBurleyDiffusionProfile(dist.b, shapeParam).b);
 		//float3 weights = EvalGaussianDiffusionProfile(dist);
 
 		totalWeights += weights;
@@ -276,7 +278,7 @@ float3 IntegrateDiffuseScattering(float NdotL, float radius, float3 shapeParam, 
 	return saturate(totalLight / totalWeights);
 }
 
-float3 IntegrateDiffuseScattering(float NdotL, float radius, float3 shapeParam)
+float IntegrateDiffuseScattering(float NdotL, float radius, float shapeParam)
 {
     float x = NdotL;
     float y = 1.0f - radius;
@@ -288,4 +290,11 @@ float3 IntegrateDiffuseScattering(float NdotL, float radius, float3 shapeParam)
 	float fit_b = x < 0.5538 ? 5*x3*x3 : 1.86 * x - 0.889;
 	float lighting = lerp(fit_b, fit_a, y * y);
 	return lerp(fit_min_scat, lighting, s);
+}
+
+float3 IntegrateDiffuseScattering(float3 NdotL, float radius, float3 shapeParam)
+{
+    return float3(IntegrateDiffuseScattering(NdotL.x, radius, shapeParam.x),
+                  IntegrateDiffuseScattering(NdotL.y, radius, shapeParam.y),
+                  IntegrateDiffuseScattering(NdotL.z, radius, shapeParam.z));
 }
