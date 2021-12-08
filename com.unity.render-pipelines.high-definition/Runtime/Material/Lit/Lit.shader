@@ -34,7 +34,8 @@ Shader "HDRP/Lit"
         [HideInInspector] _HeightCenter("Height Center", Range(0.0, 1.0)) = 0.5 // In texture space
 
         _Radius("radius", Float) = 1
-        _Blur("blur", Color) = (1, 1, 1, 1)
+        _Blur("blur", Float) = 1
+        _Area("area", Float) = 1
         [KeywordEnum(Default, Lite)] _Options("Shader Options", Int) = 0
         [Enum(MinMax, 0, Amplitude, 1)] _HeightMapParametrization("Heightmap Parametrization", Int) = 0
         // These parameters are for vertex displacement/Tessellation
@@ -898,9 +899,10 @@ Shader "HDRP/Lit"
             // - Provide sampling function for shadowmap, ies, cookie and reflection (depends on the specific use with the light loops like index array or atlas or single and texture format (cubemap/latlong))
 
             #define HAS_LIGHTLOOP
+            #define HAS_PENNER
 
             #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Lighting/LightLoop/LightLoopDef.hlsl"
-            #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Lit/Lit.hlsl"
+            #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Lit/LitSSS.hlsl"
             #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Lighting/LightLoop/LightLoop.hlsl"
 
             #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Lit/ShaderPass/LitSharePass.hlsl"

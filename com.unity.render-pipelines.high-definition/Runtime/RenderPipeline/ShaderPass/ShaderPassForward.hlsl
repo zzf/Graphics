@@ -161,9 +161,13 @@ void Frag(PackedVaryingsToPS packedInput
 
             GetPBRValidatorDebug(surfaceData, result);
 
+#ifdef HAS_PENNER
+            //result = length(fwidth(surfaceData.geomNormalWS)) / length(fwidth(posInput.positionWS)) / _Radius;
+            //if (_DebugFullScreenMode == FULLSCREENDEBUGMODE_VALIDATE_SPECULAR_COLOR)
+            //    result = (1.0f-renormFactor) * _Radius;
+#endif
+
             outColor = float4(result, 1.0f);
-            // TODO: MAKE A REAL DEBUG MODE FOR IT
-            outColor = preLightData.curvature / _Radius;
         }
         else if (_DebugFullScreenMode == FULLSCREENDEBUGMODE_TRANSPARENCY_OVERDRAW)
         {

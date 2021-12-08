@@ -140,6 +140,10 @@ namespace UnityEngine.Rendering.HighDefinition
             public uint diffusionProfileIndex;
             public Vector3 shapeParam;
             [SurfaceDataAttributes(precision = FieldPrecision.Real)]
+            public float worldScale;
+            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
+            public float filterRadius;
+            [SurfaceDataAttributes(precision = FieldPrecision.Real)]
             public float subsurfaceMask;
 
             // Transmission

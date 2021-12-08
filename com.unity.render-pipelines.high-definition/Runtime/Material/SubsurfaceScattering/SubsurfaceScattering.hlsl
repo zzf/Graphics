@@ -175,6 +175,8 @@ void FillMaterialSSS(uint diffusionProfileIndex, float subsurfaceMask, inout BSD
     bsdfData.diffusionProfileIndex = diffusionProfileIndex;
     bsdfData.fresnel0 = _TransmissionTintsAndFresnel0[diffusionProfileIndex].a;
     bsdfData.shapeParam = _ShapeParamsAndMaxScatterDists[diffusionProfileIndex].rgb;
+    bsdfData.worldScale = _WorldScalesAndFilterRadiiAndThicknessRemaps[diffusionProfileIndex].r;
+    bsdfData.filterRadius = _WorldScalesAndFilterRadiiAndThicknessRemaps[diffusionProfileIndex].g;
     bsdfData.subsurfaceMask = subsurfaceMask;
 #if !SHADEROPTIONS_QUALITY_LITE
     bsdfData.materialFeatures |= MATERIALFEATUREFLAGS_SSS_OUTPUT_SPLIT_LIGHTING;
@@ -266,10 +268,8 @@ float3 IntegrateDiffuseScattering(float3 NdotL, float radius, float3 shapeParam,
 	for (float x = -limit; x <= limit; x += inc)
 	{
 		float3 diffuse = saturate(cos(theta + x));
-		float3 dist = abs(2.0f * radius * sin(x * 0.5f));
-		float3 weights = float3(EvalBurleyDiffusionProfile(dist.r, shapeParam).r,
-		                        EvalBurleyDiffusionProfile(dist.g, shapeParam).g,
-		                        EvalBurleyDiffusionProfile(dist.b, shapeParam).b);
+		float dist = abs(2.0f * radius * sin(x * 0.5f));
+		float3 weights = EvalBurleyDiffusionProfile(dist, shapeParam);
 		//float3 weights = EvalGaussianDiffusionProfile(dist);
 
 		totalWeights += weights;
@@ -280,9 +280,9 @@ float3 IntegrateDiffuseScattering(float3 NdotL, float radius, float3 shapeParam,
 
 float IntegrateDiffuseScattering(float NdotL, float radius, float shapeParam)
 {
-    float x = NdotL;
-    float y = 1.0f - radius;
-    float s = 0.5f / shapeParam + 0.5f;
+    float x = 0.5f + 0.5f * NdotL;
+    float y = 1.0f - (radius - 1.0f) / 15.0f;
+    float s = 0.5f + 0.5f * shapeParam;
 
 	float fit_min_scat = saturate(2 * x - 1);
 	float fit_a = 0.42 * exp(x) - 0.42;

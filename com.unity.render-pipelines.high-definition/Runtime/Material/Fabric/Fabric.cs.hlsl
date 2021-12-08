@@ -87,6 +87,8 @@ struct BSDFData
     float perceptualRoughness;
     uint diffusionProfileIndex;
     float3 shapeParam;
+    float worldScale;
+    float filterRadius;
     float subsurfaceMask;
     float thickness;
     bool useThickObjectMode;

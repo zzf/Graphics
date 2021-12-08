@@ -85,6 +85,8 @@ struct BSDFData
     float2 mask;
     uint diffusionProfileIndex;
     float3 shapeParam;
+    float worldScale;
+    float filterRadius;
     float subsurfaceMask;
     float roughness;
 };

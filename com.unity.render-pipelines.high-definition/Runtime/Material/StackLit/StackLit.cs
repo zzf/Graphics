@@ -166,7 +166,12 @@ namespace UnityEngine.Rendering.HighDefinition
             // SSS
             [SurfaceDataAttributes("Diffusion Profile Hash")]
             public uint diffusionProfileHash;
+            [SurfaceDataAttributes("Shape paramater")]
             public Vector3 shapeParam;
+            [SurfaceDataAttributes("World Scale")]
+            public float worldScale;
+            [SurfaceDataAttributes("Filter Radius")]
+            public float filterRadius;
             [SurfaceDataAttributes("Subsurface Mask")]
             public float subsurfaceMask;
 
