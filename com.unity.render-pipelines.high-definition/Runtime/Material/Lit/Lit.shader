@@ -36,6 +36,7 @@ Shader "HDRP/Lit"
         _Radius("radius", Float) = 1
         _Blur("blur", Float) = 1
         _Area("area", Float) = 1
+        [KeywordEnum(Analytic, Fit)] _Algorithm("Algorithm", Float) = 1
         [KeywordEnum(Default, Lite)] _Options("Shader Options", Int) = 0
         [Enum(MinMax, 0, Amplitude, 1)] _HeightMapParametrization("Heightmap Parametrization", Int) = 0
         // These parameters are for vertex displacement/Tessellation
@@ -232,6 +233,7 @@ Shader "HDRP/Lit"
     //-------------------------------------------------------------------------------------
 
     #pragma multi_compile _ _OPTIONS_LITE
+    #pragma multi_compile _ALGORITHM_ANALYTIC _ALGORITHM_FIT
 
     #pragma shader_feature_local _ALPHATEST_ON
     #pragma shader_feature_local _ALPHATOMASK_ON

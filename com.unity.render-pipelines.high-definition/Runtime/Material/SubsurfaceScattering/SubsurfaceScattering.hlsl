@@ -280,16 +280,25 @@ float3 IntegrateDiffuseScattering(float3 NdotL, float radius, float3 shapeParam,
 
 float IntegrateDiffuseScattering(float NdotL, float radius, float shapeParam)
 {
-    float x = 0.5f + 0.5f * NdotL;
-    float y = 1.0f - (radius - 1.0f) / 15.0f;
-    float s = 0.5f + 0.5f * shapeParam;
+	float x = 0.5f + 0.5f * NdotL;
+	float y = 1.0f - (radius - 1.0f) / 15.0f;
+	float s = 1.0f / shapeParam;
 
-	float fit_min_scat = saturate(2 * x - 1);
-	float fit_a = 0.42 * exp(x) - 0.42;
-	float x3 = x * x * x;
-	float fit_b = x < 0.5538 ? 5*x3*x3 : 1.86 * x - 0.889;
-	float lighting = lerp(fit_b, fit_a, y * y);
-	return lerp(fit_min_scat, lighting, s);
+	float x2 = x * x;
+	float fit_a = x * (0.297809419735113f * x + 0.409123767595839f); // madd mul
+	float fit_b_1 = x2 * (2.55383104671677f * x2 - 0.479377197902363f) + 0.0891580536081126f * x; // madd mul madd
+	float fit_b_2 = x * 1.895f - 0.925f; // madd
+
+	float fit_b = x < 0.6339f ? fit_b_1 : fit_b_2;
+
+	float lambda_scat = s < 0.07748f ? 24 * s*s : 0.29f * (1 - 0.925 / (s + 0.17)) + 0.938;
+	float fit_min_scat_a = x < 0.55 ? saturate((x - 0.4)* (x - 0.4)* (x - 0.4) * 30) : 2 * x - 1;
+	float fit_min_scat_b = saturate(2 * x - 1);
+
+	fit_a = lerp(fit_min_scat_a, fit_a, lambda_scat);
+	fit_b = lerp(fit_min_scat_b, fit_min_scat_b, lambda_scat);
+
+	return lerp(fit_b, fit_a, y * y);
 }
 
 float3 IntegrateDiffuseScattering(float3 NdotL, float radius, float3 shapeParam)

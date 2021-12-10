@@ -1435,8 +1435,11 @@ CBSDF EvaluateBSDF(float3 V, float3 L, PreLightData preLightData, BSDFData bsdfD
 
         float3 curvature = _Radius;
 
-        //diffRNdotL = IntegrateDiffuseScattering(NdotL_2, curvature, bsdfData.shapeParam);
+#if _ALGORITHM_ANALYTIC
         diffRNdotL = IntegrateDiffuseScattering(NdotL_2, curvature, bsdfData.shapeParam, 20);
+#else
+        diffRNdotL = IntegrateDiffuseScattering(NdotL_2, curvature, bsdfData.shapeParam);
+#endif
     }
 #else
     float diffRNdotL = clampedNdotL;
