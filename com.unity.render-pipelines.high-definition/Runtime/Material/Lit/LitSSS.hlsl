@@ -1425,7 +1425,7 @@ CBSDF EvaluateBSDF(float3 V, float3 L, PreLightData preLightData, BSDFData bsdfD
         float3 N_high = bsdfData.normalWS;
         float3 N_low = bsdfData.geomNormalWS;
 
-        float worldScale  = (bsdfData.worldScale * rcp(bsdfData.subsurfaceMask));
+        float worldScale = bsdfData.worldScale * rcp(bsdfData.subsurfaceMask);
         float3 blur = saturate(EvalBurleyDiffusionProfile(worldScale, bsdfData.shapeParam) * bsdfData.filterRadius);
         float3 NdotL_2 = float3(
             dot(L, lerp(N_high, N_low, blur.r)),
@@ -1433,7 +1433,7 @@ CBSDF EvaluateBSDF(float3 V, float3 L, PreLightData preLightData, BSDFData bsdfD
             dot(L, lerp(N_high, N_low, blur.b))
         );
 
-        float3 curvature = _Radius;
+        float curvature = _Radius;
 
 #if _ALGORITHM_ANALYTIC
         diffRNdotL = IntegrateDiffuseScattering(NdotL_2, curvature, bsdfData.shapeParam, 20);
@@ -1466,7 +1466,7 @@ CBSDF EvaluateBSDF(float3 V, float3 L, PreLightData preLightData, BSDFData bsdfD
 
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Lighting/LightEvaluation.hlsl"
 #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/MaterialEvaluation.hlsl"
-#include "Packages/com.unity.render-pipelines.high-definition/Runtime/Lighting/SurfaceShading.hlsl"
+#include "Packages/com.unity.render-pipelines.high-definition/Runtime/Lighting/SurfaceShadingSSS.hlsl"
 
 //-----------------------------------------------------------------------------
 // EvaluateBSDF_Directional

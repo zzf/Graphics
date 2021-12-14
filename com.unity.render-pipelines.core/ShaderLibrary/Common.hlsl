@@ -776,6 +776,11 @@ real Smootherstep(real a, real b, real t)
     return Smootherstep01(x);
 }
 
+real InverseSmoothstep01(real x)
+{
+    return (sqrt(x) - sqrt(1 - x)) * 0.5 + 0.5;
+}
+
 float3 NLerp(float3 A, float3 B, float t)
 {
     return normalize(lerp(A, B, t));

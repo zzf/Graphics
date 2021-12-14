@@ -1,4 +1,4 @@
-Shader "HDRP/Lit"
+Shader "HDRP/LitSSS"
 {
     Properties
     {
@@ -224,13 +224,16 @@ Shader "HDRP/Lit"
     HLSLINCLUDE
 
     #pragma target 4.5
-    //#pragma enable_d3d11_debug_symbols
+    #pragma enable_d3d11_debug_symbols
 
     #include "Packages/com.unity.render-pipelines.high-definition-config/Runtime/ShaderConfig.cs.hlsl"
 
     //-------------------------------------------------------------------------------------
     // Variant
     //-------------------------------------------------------------------------------------
+
+    #pragma multi_compile _ _OPTIONS_LITE
+    #pragma multi_compile _ALGORITHM_ANALYTIC _ALGORITHM_FIT
 
     #pragma shader_feature_local _ALPHATEST_ON
     #pragma shader_feature_local _ALPHATOMASK_ON
@@ -898,9 +901,10 @@ Shader "HDRP/Lit"
             // - Provide sampling function for shadowmap, ies, cookie and reflection (depends on the specific use with the light loops like index array or atlas or single and texture format (cubemap/latlong))
 
             #define HAS_LIGHTLOOP
+            #define HAS_PENNER
 
             #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Lighting/LightLoop/LightLoopDef.hlsl"
-            #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Lit/Lit.hlsl"
+            #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Lit/LitSSS.hlsl"
             #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Lighting/LightLoop/LightLoop.hlsl"
 
             #include "Packages/com.unity.render-pipelines.high-definition/Runtime/Material/Lit/ShaderPass/LitSharePass.hlsl"
