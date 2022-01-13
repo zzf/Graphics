@@ -6,11 +6,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [13.1.5] - 2021-12-17
 
+### Changed
+- DecalRendererFeature is now using RTHandles internally.
+
 ### Fixed
 - Fixed a depth non-clear in XR due to wrong depth slice being checked.
-
-## Fixed
 - Fixed decal compilation issue on mac.
+- Fixed some rendering inconsistencies when using Decals.
 
 ## [13.1.4] - 2021-12-04
 
