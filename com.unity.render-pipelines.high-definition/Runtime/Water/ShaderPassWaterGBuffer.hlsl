@@ -90,6 +90,16 @@ void Frag(PackedVaryingsToPS packedInput,
     // Compute the BSDF Data
     BSDFData bsdfData = ConvertSurfaceDataToBSDFData(input.positionSS.xy, surfaceData);
 
+    if (dot(V, bsdfData.normalWS) < 0.0)
+    {
+        bsdfData.normalWS = -bsdfData.normalWS;
+    }
+
+    if (dot(V, bsdfData.lowFrequencyNormalWS) < 0.0)
+    {
+        bsdfData.lowFrequencyNormalWS = -bsdfData.lowFrequencyNormalWS;
+    }
+
     // Encode the water into the gbuffer
     EncodeIntoGBuffer(bsdfData, builtinData, posInput.positionSS, outGBuffer0, outGBuffer1, outGBuffer2);
 }

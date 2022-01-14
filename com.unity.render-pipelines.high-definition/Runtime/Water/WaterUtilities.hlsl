@@ -152,25 +152,10 @@ float EvaluateFoam(float jacobian, float foamAmount)
     return saturate(-jacobian + foamAmount);
 }
 
-#if !defined(WATER_SIMULATION)
 // Fast random hash function
 float2 SimpleHash2(float2 p)
 {
     return frac(sin(mul(float2x2(127.1, 311.7, 269.5, 183.3), p)) * 43758.5453);
-}
-
-float3 WaterSimulationPosition(float3 objectPosition)
-{
-    // Scale the position by the size of the grid
-    float3 simulationPos = objectPosition * float3(_GridSize.x, 1.0, _GridSize.y);
-
-    // Apply the rotation and the offset
-    simulationPos = float3(simulationPos.x * _WaterRotation.x - simulationPos.z * _WaterRotation.y, simulationPos.y, simulationPos.x * _WaterRotation.y + simulationPos.z * _WaterRotation.x);
-
-    // Offset the surface to where it should be
-    simulationPos += float3(_PatchOffset.x, _PatchOffset.y, _PatchOffset.z);
-
-    return simulationPos;
 }
 
 #if UNITY_ANY_INSTANCING_ENABLED
@@ -309,6 +294,7 @@ struct WaterAdditionalData
     float deepFoam;
 };
 
+#if !defined(WATER_SIMULATION)
 void EvaluateWaterAdditionalData(float3 positionAWS, float4 bandsMultiplier, out WaterAdditionalData waterAdditionalData)
 {
     // Compute the simulation coordinates
@@ -386,6 +372,7 @@ float3 ComputeDebugNormal(float3 worldPos)
     float3 worldPosDdy = normalize(ddy(worldPos));
     return normalize(-cross(worldPosDdx, worldPosDdy));
 }
+#endif
 
 float2 EvaluateFoamUV(float3 positionAWS)
 {
@@ -641,5 +628,4 @@ float3 EvaluateScatteringColor(float sssMask, float lowFrequencyHeight, float ho
     float lambertCompensation = lerp(_ScatteringLambertLighting.z, _ScatteringLambertLighting.w, sssMask);
     return scatteringTint * (1.f - absorptionTint) * lambertCompensation * (1.0 + deepFoam);
 }
-#endif
 #endif // WATER_UTILITIES_H

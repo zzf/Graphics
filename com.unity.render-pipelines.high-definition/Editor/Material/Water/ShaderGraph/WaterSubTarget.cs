@@ -122,7 +122,7 @@ namespace UnityEditor.Rendering.HighDefinition.ShaderGraph
         #region GBufferWater
         public static RenderStateCollection WaterGBuffer = new RenderStateCollection
         {
-            { RenderState.Cull(Cull.Back) },
+            { RenderState.Cull(Cull.Off) },
             { RenderState.ZWrite(ZWrite.On) },
             { RenderState.ZTest(ZTest.LEqual) },
             { RenderState.Stencil(new StencilDescriptor()
