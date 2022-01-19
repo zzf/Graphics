@@ -17,22 +17,16 @@ namespace UnityEngine.Rendering
         {
             // Collection is empty
             var count = inputList.Count;
-            if (count == 0)
-                return;
+            elementsToRemoveFromBack = Mathf.Clamp(elementsToRemoveFromBack, 0, count);
 
-            // Nothing to remove or negative numbers
-            if (elementsToRemoveFromBack < 1)
-                return;
-
-            elementsToRemoveFromBack = Mathf.Min(elementsToRemoveFromBack, count);
-
+            var index = count - elementsToRemoveFromBack;
             if (inputList is List<T> genericList)
             {
-                genericList.RemoveRange(count - elementsToRemoveFromBack, elementsToRemoveFromBack);
+                genericList.RemoveRange(index, elementsToRemoveFromBack);
             }
             else
             {
-                for (var i = count - 1; i >= elementsToRemoveFromBack; --i)
+                for (var i = count - 1; i >= index; --i)
                     inputList.RemoveAt(i);
             }
         }
