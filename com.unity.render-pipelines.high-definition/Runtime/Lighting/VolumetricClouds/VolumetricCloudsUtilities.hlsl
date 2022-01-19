@@ -20,7 +20,7 @@
 #define BACKWARD_ECCENTRICITY 0.7
 // Distance until which the erosion texture i used
 #define MIN_EROSION_DISTANCE 3000.0
-#define MAX_EROSION_DISTANCE 300000.0
+#define MAX_EROSION_DISTANCE 100000.0
 // Value that is used to normalize the noise textures
 #define NOISE_TEXTURE_NORMALIZATION_FACTOR 100000.0f
 // Maximal distance until which the "skybox"
@@ -615,6 +615,7 @@ float3 EvaluateSunLuminance(float3 positionWS, float3 sunDirection, float3 sunCo
     return luminance;
 }
 
+// Evaluates the inscattering from this position
 void EvaluateCloud(CloudProperties cloudProperties, EnvironmentLighting envLighting,
                 float3 currentPositionWS, float stepSize, float relativeRayDistance,
                 inout VolumetricRayResult volumetricRay)
@@ -636,15 +637,22 @@ void EvaluateCloud(CloudProperties cloudProperties, EnvironmentLighting envLight
     totalLuminance += lerp(envLighting.ambientTermBottom, envLighting.ambientTermTop, cloudProperties.height) * cloudProperties.ambientOcclusion;
 
     // Note: This is an alterated version of the  "Energy-conserving analytical integration"
-    // For some reason the divison by the clamped extinction just makes it all wrong
+    // For some reason the divison by the clamped extinction just makes it all wrong.
     const float3 integScatt = (totalLuminance - totalLuminance * transmittance);
     volumetricRay.inScattering += _ScatteringTint.xyz * integScatt * volumetricRay.transmittance;
     volumetricRay.transmittance *= transmittance;
 }
 
+// Global attenuation of the density based on the camera distance
 float DensityFadeValue(float distanceToCamera)
 {
     return saturate((distanceToCamera - _FadeInStart) / (_FadeInStart + _FadeInDistance));
+}
+
+// Evaluate the erosion mip offset based on the camera distance
+float ErosionMipOffset(float distanceToCamera)
+{
+    return lerp(0.0, 4.0, saturate((distanceToCamera - MIN_EROSION_DISTANCE) / (MAX_EROSION_DISTANCE - MIN_EROSION_DISTANCE)));
 }
 
 VolumetricRayResult TraceVolumetricRay(CloudRay cloudRay)
@@ -680,10 +688,6 @@ VolumetricRayResult TraceVolumetricRay(CloudRay cloudRay)
             // Evaluate our integration step
             float stepS = totalDistance / (float)_NumPrimarySteps;
 
-            // Initialize the cloud properties structure
-            CloudProperties cloudProperties;
-            ZERO_INITIALIZE(CloudProperties, cloudProperties);
-
             // Tracking the number of steps that have been made
             int currentIndex = 0;
 
@@ -703,19 +707,20 @@ VolumetricRayResult TraceVolumetricRay(CloudRay cloudRay)
             // Do the ray march for every step that we can.
             while (currentIndex < _NumPrimarySteps && currentDistance < totalDistance)
             {
+                // Compute the camera-distance based attenuation
                 float densityAttenuationValue = DensityFadeValue(rayMarchRange.start + currentDistance);
+                // Compute the mip offset for the erosion texture
+                float erosionMipOffset = ErosionMipOffset(rayMarchRange.start + currentDistance);
 
                 // Should we be evaluating the clouds or just doing the large ray marching
                 if (activeSampling)
                 {
-                    // Compute the mip offset for the erosion texture
-                    float erosionMipOffset = lerp(0.0, 2.0, saturate((currentDistance - MIN_EROSION_DISTANCE) / (MAX_EROSION_DISTANCE - MIN_EROSION_DISTANCE)));
-
                     // If the density is null, we can skip as there will be no contribution
+                    CloudProperties cloudProperties;
                     EvaluateCloudProperties(currentPositionWS, 0.0f, erosionMipOffset, false, false, cloudProperties);
 
                     // Apply the fade in function to the density
-                    cloudProperties.density = cloudProperties.density * densityAttenuationValue;
+                    cloudProperties.density *= densityAttenuationValue;
 
                     if (cloudProperties.density > CLOUD_DENSITY_TRESHOLD)
                     {
@@ -756,7 +761,7 @@ VolumetricRayResult TraceVolumetricRay(CloudRay cloudRay)
                     EvaluateCloudProperties(currentPositionWS, 1.0f, 0.0, true, false, cloudProperties);
 
                     // Apply the fade in function to the density
-                    cloudProperties.density = cloudProperties.density * densityAttenuationValue;
+                    cloudProperties.density *= densityAttenuationValue;
 
                     // If the density is lower than our tolerance,
                     if (cloudProperties.density < CLOUD_DENSITY_TRESHOLD)
@@ -793,27 +798,6 @@ VolumetricRayResult TraceVolumetricRay(CloudRay cloudRay)
     return volumetricRay;
 }
 
-// Given that the sky is virtually a skybox, we cannot use the motion vector buffer
-float2 EvaluateCloudMotionVectors(float2 fullResCoord, float deviceDepth, float positionFlag)
-{
-    PositionInputs posInput = GetPositionInput(fullResCoord, _ScreenSize.zw, deviceDepth, _IsPlanarReflection ? _CameraInverseViewProjection_NO : UNITY_MATRIX_I_VP, UNITY_MATRIX_V);
-    float4 worldPos = float4(posInput.positionWS, positionFlag);
-    float4 prevPos = worldPos;
-
-    float4 prevClipPos = mul(_IsPlanarReflection ? _CameraPrevViewProjection_NO : UNITY_MATRIX_PREV_VP, prevPos);
-    float4 curClipPos = mul(_IsPlanarReflection ?  _CameraViewProjection_NO: UNITY_MATRIX_UNJITTERED_VP, worldPos);
-
-    float2 previousPositionCS = prevClipPos.xy / prevClipPos.w;
-    float2 positionCS = curClipPos.xy / curClipPos.w;
-
-    // Convert from Clip space (-1..1) to NDC 0..1 space
-    float2 velocity = (positionCS - previousPositionCS) * 0.5;
-#if UNITY_UV_STARTS_AT_TOP
-    velocity.y = -velocity.y;
-#endif
-    return velocity;
-}
-
 // This function compute the checkerboard undersampling position
 int ComputeCheckerBoardIndex(int2 traceCoord, int subPixelIndex)
 {
@@ -821,7 +805,6 @@ int ComputeCheckerBoardIndex(int2 traceCoord, int subPixelIndex)
     int checkerBoardLocation = (subPixelIndex + localOffset) & 0x3;
     return checkerBoardLocation;
 }
-
 
 float EvaluateFinalTransmittance(float3 color, float transmittance)
 {
