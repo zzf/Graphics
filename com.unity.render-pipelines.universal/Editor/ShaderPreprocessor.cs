@@ -716,13 +716,7 @@ namespace UnityEditor.Rendering.Universal
                     ++i;
             }
 
-            if (compilerDataList is List<ShaderCompilerData> inputDataList)
-                inputDataList.RemoveRange(inputShaderVariantCount, inputDataList.Count - inputShaderVariantCount);
-            else
-            {
-                for (int i = compilerDataList.Count - 1; i >= inputShaderVariantCount; --i)
-                    compilerDataList.RemoveAt(i);
-            }
+            compilerDataList.RemoveBack(prevVariantCount - inputShaderVariantCount);
 
             m_stripTimer.Stop();
             double stripTimeMs = m_stripTimer.Elapsed.TotalMilliseconds;

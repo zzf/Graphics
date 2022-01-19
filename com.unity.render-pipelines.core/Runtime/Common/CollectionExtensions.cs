@@ -12,7 +12,7 @@ namespace UnityEngine.Rendering
         /// Removes a given count from the back of the given list
         /// </summary>
         /// <param name="inputList">The list to be removed</param>
-        /// <param name="elements">The number of elements to be removed from the back</param>
+        /// <param name="elementsToRemoveFromBack">The number of elements to be removed from the back</param>
         public static void RemoveBack<T>([NotNull] this IList<T> inputList, int elementsToRemoveFromBack)
         {
             // Collection is empty
