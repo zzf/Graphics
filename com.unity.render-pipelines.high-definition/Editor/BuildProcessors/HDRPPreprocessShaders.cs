@@ -374,7 +374,7 @@ namespace UnityEditor.Rendering.HighDefinition
                         ++i;
                 }
 
-                inputData.RemoveBack(inputData.Count - inputShaderVariantCount);
+                inputData.RemoveRange(inputShaderVariantCount, inputData.Count - inputShaderVariantCount);
 
                 LogShaderVariants(shader, kernelName, preStrippingCount, (uint)inputData.Count);
             }
@@ -537,7 +537,7 @@ namespace UnityEditor.Rendering.HighDefinition
                         ++i;
                 }
 
-                inputData.RemoveBack(inputData.Count - inputShaderVariantCount);
+                inputData.RemoveRange(inputShaderVariantCount, inputData.Count - inputShaderVariantCount);
 
                 LogShaderVariants(shader, snippet, preStrippingCount, (uint)inputData.Count);
             }

@@ -1,50 +1,78 @@
+using System;
 using System.Collections;
 using NUnit.Framework;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace UnityEngine.Rendering.Tests
 {
     public class CollectionExtensionTests
     {
-        static TestCaseData[] s_TestCaseDatas =
+        static TestCaseData[] s_ListTestsCaseDatas =
         {
-            new TestCaseData(new List<int>(), 0)
-                .Returns(new List<int>())
-                .SetName("Empty"),
-            new TestCaseData(new List<int>(), -1)
-                .Returns(new List<int>())
-                .SetName("EmptyNegative"),
-            new TestCaseData(new List<int>() {1,2}, -1)
-                .Returns(new List<int>() {1,2})
-                .SetName("NonEmptyNegative"),
-            new TestCaseData(new List<int>() {1,2}, 2)
-                .Returns(new List<int>())
-                .SetName("All"),
-            new TestCaseData(new List<int>() {1,2}, 1)
-                .Returns(new List<int>() {1})
-                .SetName("JustLast"),
-            new TestCaseData(new List<int>() {1,2}, 3)
-                .Returns(new List<int>())
-                .SetName("BiggerThanCollection"),
-            new TestCaseData(new List<int>() {1,2,3,4,5,6,7}, 3)
-                .Returns(new List<int>(){1,2,3,4})
-                .SetName("SomeElements"),
+            new TestCaseData(new List<int> {1,2,3,4,5,6}, 1, 2).SetName("Remove middle"),
+            new TestCaseData(new List<int> {1,2,3,4,5,6}, 0, 2).SetName("Remove front"),
+            new TestCaseData(new List<int> {1,2,3,4,5,6}, 0, 6).SetName("Remove all"),
+            new TestCaseData(new List<int> {1,2,3,4,5,6}, 5, 1).SetName("Remove back"),
+            new TestCaseData(new List<int> {1,2,3,4,5,6}, 5, -1).SetName("Count negative"),
+            new TestCaseData(new List<int> {1,2,3,4,5,6}, -1, 2).SetName("Index negative"),
+            new TestCaseData(new List<int> {1,2,3,4,5,6}, 5, 0).SetName("Count 0"),
+            new TestCaseData(new List<int> {1,2,3,4,5,6}, 0, 0).SetName("Index 0"),
+            new TestCaseData(new List<int> {1,2,3,4,5,6}, 5, 5).SetName("Count exceeds list size"),
         };
 
-        [Test, TestCaseSource(nameof(s_TestCaseDatas))]
-        public List<int> TestsList(List<int> ints, int elementsToRemove)
+        [Test, TestCaseSource(nameof(s_ListTestsCaseDatas))]
+        public void CheckRemoveRange(List<int> list, int startIndex, int count)
         {
-            ints.RemoveBack(elementsToRemove);
-            return ints;
+            using (ListPool<int>.Get(out var copy))
+            using (GenericPool<SimpleList>.Get(out var simpleList))
+            {
+                copy.AddRange(list);
+                simpleList.AddRange(list);
+
+                Type exceptionType = null;
+
+                try
+                {
+                    (list as IList<int>).RemoveRange(startIndex, count);
+                }
+                catch (Exception e)
+                {
+                    exceptionType = e.GetType();
+                }
+
+                try
+                {
+                    simpleList.RemoveRange(startIndex, count);
+                }
+                catch (Exception e)
+                {
+                    Assert.AreEqual(e.GetType(), exceptionType);
+                }
+
+                try
+                {
+                    // Use the List<T> standard implementation to check the correct values
+                    copy.RemoveRange(startIndex, count);
+                }
+                catch (Exception e)
+                {
+                    Assert.AreEqual(e.GetType(), exceptionType);
+                }
+
+                Assert.AreEqual(copy, list);
+                Assert.AreEqual(copy, simpleList);
+            }
         }
 
-        public class SimpleList : IList<int>
+        class SimpleList : IList<int>
         {
-            private List<int> m_List;
+            private List<int> m_List = new List<int>();
 
-            public SimpleList(params int[] list)
+            public void AddRange(List<int> list)
             {
-                m_List = new List<int>(list);
+                m_List.Clear();
+                m_List.AddRange(list);
             }
 
             public IEnumerator<int> GetEnumerator()
@@ -106,36 +134,5 @@ namespace UnityEngine.Rendering.Tests
             }
         }
 
-        static TestCaseData[] s_SimpleListTestsCaseDatas =
-        {
-            new TestCaseData(new SimpleList(), 0)
-                .Returns(new SimpleList())
-                .SetName("Empty"),
-            new TestCaseData(new SimpleList(), -1)
-                .Returns(new SimpleList())
-                .SetName("EmptyNegative"),
-            new TestCaseData(new SimpleList(1,2), -1)
-                .Returns(new SimpleList(1,2))
-                .SetName("NonEmptyNegative"),
-            new TestCaseData(new SimpleList(1,2), 2)
-                .Returns(new SimpleList())
-                .SetName("All"),
-            new TestCaseData(new SimpleList(1,2), 1)
-                .Returns(new SimpleList(1))
-                .SetName("JustLast"),
-            new TestCaseData(new SimpleList(1,2), 3)
-                .Returns(new SimpleList())
-                .SetName("BiggerThanCollection"),
-            new TestCaseData(new SimpleList(1,2,3,4,5,6,7), 3)
-                .Returns(new SimpleList(1,2,3,4))
-                .SetName("SomeElements"),
-        };
-
-        [Test, TestCaseSource(nameof(s_SimpleListTestsCaseDatas))]
-        public SimpleList SimpleListTests(SimpleList ints, int elementsToRemove)
-        {
-            ints.RemoveBack(elementsToRemove);
-            return ints;
-        }
     }
 }
