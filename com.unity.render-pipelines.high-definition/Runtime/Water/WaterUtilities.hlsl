@@ -173,6 +173,18 @@ float3 WaterSimulationPositionInstanced(float3 objectPosition, uint instanceID)
     // Return the simulation position
     return simulationPos;
 }
+#else
+float3 WaterSimulationPosition(float3 objectPosition)
+{
+    // Scale the position by the size of the grid
+    float3 simulationPos = objectPosition * float3(_GridSize.x, 1.0, _GridSize.y);
+
+    // Offset the surface to where it should be
+    simulationPos += float3(_PatchOffset.x, _PatchOffset.y, _PatchOffset.z);
+
+    // Return the simulation position
+    return simulationPos;
+}
 #endif
 
 float3 GetWaterVertexPosition(float3 positionRWS)

@@ -387,6 +387,33 @@ namespace UnityEngine.Rendering.HighDefinition
         public LightLayerEnum lightLayerMask = LightLayerEnum.LightLayerDefault;
         #endregion
 
+        #region Water Underwater
+        /// <summary>
+        /// </summary>
+        [Tooltip("")]
+        public bool underWater = false;
+
+        /// <summary>
+        /// </summary>
+        [Tooltip("")]
+        public BoxCollider volumeBounds = null;
+
+        /// <summary>
+        /// </summary>
+        [Tooltip("")]
+        public float volumeDepth = 50.0f;
+
+        /// <summary>
+        /// </summary>
+        [Tooltip("")]
+        public int volumePrority = 0;
+
+        /// <summary>
+        /// </summary>
+        [Tooltip("")]
+        public float transitionSize = 2.0f;
+        #endregion
+
         // Internal simulation data
         internal WaterSimulationResources simulation = null;
 

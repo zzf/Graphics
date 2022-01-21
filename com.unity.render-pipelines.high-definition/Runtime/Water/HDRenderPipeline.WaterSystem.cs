@@ -50,6 +50,7 @@ namespace UnityEngine.Rendering.HighDefinition
         ComputeShader m_WaterLightingCS;
         int m_WaterPrepareSSRKernel;
         int m_WaterDeferredLightingKernel;
+        int m_UnderWaterKernel;
 
         // Intermediate RTHandles used to render the water
         RTHandle m_HtRs = null;
@@ -84,10 +85,7 @@ namespace UnityEngine.Rendering.HighDefinition
         Material m_CausticsMaterial;
 
         // Water line and under water
-        ComputeBuffer m_WaterEvaluationBuffer;
-        ComputeBuffer m_WaterHeightBuffer;
-        Vector3[] m_WaterEvaluationBufferCPU;
-        const int k_WaterEvaluationPoints = 1;
+        ComputeBuffer m_WaterCameraHeightBuffer;
 
         void InitializeWaterSystem()
         {
@@ -113,6 +111,7 @@ namespace UnityEngine.Rendering.HighDefinition
             m_WaterLightingCS = m_Asset.renderPipelineResources.shaders.waterLightingCS;
             m_WaterPrepareSSRKernel = m_WaterLightingCS.FindKernel("WaterPrepareSSR");
             m_WaterDeferredLightingKernel = m_WaterLightingCS.FindKernel("WaterDeferredLighting");
+            m_UnderWaterKernel = m_WaterLightingCS.FindKernel("UnderWater");
 
             // FFT shader and kernels
             m_FourierTransformCS = m_Asset.renderPipelineResources.shaders.fourierTransformCS;
@@ -140,9 +139,7 @@ namespace UnityEngine.Rendering.HighDefinition
             m_CausticsMaterial = CoreUtils.CreateEngineMaterial(defaultResources.shaders.waterCausticsPS);
 
             // Waterline / Underwater
-            m_WaterEvaluationBufferCPU = new Vector3[k_WaterEvaluationPoints];
-            m_WaterEvaluationBuffer = new ComputeBuffer(k_WaterEvaluationPoints, System.Runtime.InteropServices.Marshal.SizeOf<Vector3>());
-            m_WaterHeightBuffer = new ComputeBuffer(k_WaterEvaluationPoints, sizeof(float) * 4);
+            m_WaterCameraHeightBuffer = new ComputeBuffer(1 * 4, sizeof(float));
         }
 
         void ReleaseWaterSystem()
@@ -167,8 +164,7 @@ namespace UnityEngine.Rendering.HighDefinition
             }
 
             // Release the waterline underwater data
-            CoreUtils.SafeRelease(m_WaterHeightBuffer);
-            CoreUtils.SafeRelease(m_WaterEvaluationBuffer);
+            CoreUtils.SafeRelease(m_WaterCameraHeightBuffer);
 
             // Release the caustics geometry
             CoreUtils.Destroy(m_CausticsMaterial);
@@ -445,6 +441,9 @@ namespace UnityEngine.Rendering.HighDefinition
             public bool customMesh;
             public Mesh targetMesh;
 
+            // Underwater data
+            public bool evaluateCameraPosition;
+
             // Caustics parameters
             public bool causticsEnabled;
             public bool simulationCaustics;
@@ -469,11 +468,11 @@ namespace UnityEngine.Rendering.HighDefinition
             public ShaderVariablesWaterRendering waterRenderingCB;
 
             // Waterline
-            public ComputeShader simulationShader;
+            public ComputeShader simulationCS;
             public int findVerticalDisplKernel;
         }
 
-        WaterRenderingGBufferParameters PrepareWaterRenderingGBufferParameters(HDCamera hdCamera, WaterRendering settings, WaterSurface currentWater, int surfaceIndex)
+        WaterRenderingGBufferParameters PrepareWaterRenderingGBufferParameters(HDCamera hdCamera, WaterRendering settings, WaterSurface currentWater, int surfaceIndex, bool evaluateCameraPos)
         {
             WaterRenderingGBufferParameters parameters = new WaterRenderingGBufferParameters();
 
@@ -513,6 +512,9 @@ namespace UnityEngine.Rendering.HighDefinition
                     parameters.targetMesh = currentWater.geometry;
                 }
             }
+
+            // Under water data
+            parameters.evaluateCameraPosition = evaluateCameraPos;
 
             // Patch evaluation parameters
             parameters.waterSimulation = m_WaterSimulationCS;
@@ -561,7 +563,7 @@ namespace UnityEngine.Rendering.HighDefinition
             parameters.waterRenderingCB._WaterDecalLayer = ((uint)currentWater.decalLayerMask);
 
             // Waterline & underwater
-            parameters.simulationShader = m_WaterSimulationCS;
+            parameters.simulationCS = m_WaterSimulationCS;
             parameters.findVerticalDisplKernel = m_WaterSimulationCS.FindKernel("FindVerticalDisplacements");
 
             return parameters;
@@ -622,7 +624,6 @@ namespace UnityEngine.Rendering.HighDefinition
             public TextureHandle gbuffer0;
             public TextureHandle gbuffer1;
             public TextureHandle gbuffer2;
-            public ComputeBufferHandle evaluationBuffer;
             public ComputeBufferHandle heightBuffer;
         }
 
@@ -669,13 +670,8 @@ namespace UnityEngine.Rendering.HighDefinition
             m_WaterSurfaceProfileArray[waterSurfaceIndex] = profile;
         }
 
-        void EvaluateWaterLinePoints(HDCamera hdCamera)
-        {
-            m_WaterEvaluationBufferCPU[0] = hdCamera.camera.transform.position;
-        }
-
         void RenderWaterSurfaceGBuffer(RenderGraph renderGraph, HDCamera hdCamera,
-                                        WaterSurface currentWater, WaterRendering settings, int surfaceIdx,
+                                        WaterSurface currentWater, WaterRendering settings, int surfaceIdx, bool evaluateCameraPos,
                                         TextureHandle depthBuffer,
                                         TextureHandle WaterGbuffer0, TextureHandle WaterGbuffer1, TextureHandle WaterGbuffer2)
         {
@@ -685,18 +681,14 @@ namespace UnityEngine.Rendering.HighDefinition
                 if (m_TessellableMesh == null)
                     BuildGridMesh(ref m_TessellableMesh);
 
-                EvaluateWaterLinePoints(hdCamera);
-                m_WaterEvaluationBuffer.SetData(m_WaterEvaluationBufferCPU);
-
                 // Prepare all the internal parameters
-                passData.parameters = PrepareWaterRenderingGBufferParameters(hdCamera, settings, currentWater, surfaceIdx);
+                passData.parameters = PrepareWaterRenderingGBufferParameters(hdCamera, settings, currentWater, surfaceIdx, evaluateCameraPos);
 
                 // Allocate all the intermediate textures
                 passData.gbuffer0 = builder.UseColorBuffer(WaterGbuffer0, 0);
                 passData.gbuffer1 = builder.UseColorBuffer(WaterGbuffer1, 1);
                 passData.gbuffer2 = builder.UseColorBuffer(WaterGbuffer2, 2);
-                passData.evaluationBuffer = builder.WriteComputeBuffer(renderGraph.ImportComputeBuffer(m_WaterEvaluationBuffer));
-                passData.heightBuffer = builder.WriteComputeBuffer(renderGraph.ImportComputeBuffer(m_WaterHeightBuffer));
+                passData.heightBuffer = builder.WriteComputeBuffer(renderGraph.ImportComputeBuffer(m_WaterCameraHeightBuffer));
 
                 // Import all the textures into the system
                 passData.displacementTexture = renderGraph.ImportTexture(currentWater.simulation.displacementBuffer);
@@ -708,8 +700,6 @@ namespace UnityEngine.Rendering.HighDefinition
 
                 // Request the output textures
                 passData.depthBuffer = builder.UseDepthBuffer(depthBuffer, DepthAccess.ReadWrite);
-
-
 
                 builder.SetRenderFunc(
                     (WaterRenderingGBufferData data, RenderGraphContext ctx) =>
@@ -793,12 +783,18 @@ namespace UnityEngine.Rendering.HighDefinition
                             }
                         }
 
-                        // Evaluate the water line data
-                        ctx.cmd.SetComputeBufferParam(data.parameters.simulationShader, data.parameters.findVerticalDisplKernel, "_InputPositionsBuffer", data.evaluationBuffer);
-                        ctx.cmd.SetComputeBufferParam(data.parameters.simulationShader, data.parameters.findVerticalDisplKernel, "_OutputHeightBuffer", data.heightBuffer);
-                        ctx.cmd.SetComputeTextureParam(data.parameters.simulationShader, data.parameters.findVerticalDisplKernel, HDShaderIDs._WaterDisplacementBuffer, data.displacementTexture);
-                        ctx.cmd.SetComputeTextureParam(data.parameters.simulationShader, data.parameters.findVerticalDisplKernel, HDShaderIDs._WaterMask, data.parameters.waterMask);
-                        ctx.cmd.DispatchCompute(data.parameters.simulationShader, data.parameters.findVerticalDisplKernel, 1, 1, 1);
+                        // If we need to we need to evaluate the camera position, in the future this needs to be done on the CPU
+                        if (data.parameters.evaluateCameraPosition)
+                        {
+                            // Make sure the patch offset data is injected
+                            ConstantBuffer.Push(ctx.cmd, data.parameters.waterRenderingCB, data.parameters.simulationCS, HDShaderIDs._ShaderVariablesWaterRendering);
+
+                            // Evaluate the camera height, should be done on the CPU later
+                            ctx.cmd.SetComputeBufferParam(data.parameters.simulationCS, data.parameters.findVerticalDisplKernel, HDShaderIDs._WaterCameraHeightBufferRW, data.heightBuffer);
+                            ctx.cmd.SetComputeTextureParam(data.parameters.simulationCS, data.parameters.findVerticalDisplKernel, HDShaderIDs._WaterDisplacementBuffer, data.displacementTexture);
+                            ctx.cmd.SetComputeTextureParam(data.parameters.simulationCS, data.parameters.findVerticalDisplKernel, HDShaderIDs._WaterMask, data.parameters.waterMask);
+                            ctx.cmd.DispatchCompute(data.parameters.simulationCS, data.parameters.findVerticalDisplKernel, 1, 1, 1);
+                        }
                     });
             }
         }
@@ -872,6 +868,9 @@ namespace UnityEngine.Rendering.HighDefinition
                 return outputGBuffer;
             }
 
+            // Evaluate which surface will have under water rendering
+            EvaluateUnderWaterSurface(hdCamera);
+
             // Copy the frustum data to the GPU
             PropagateFrustumDataToGPU(hdCamera);
 
@@ -896,9 +895,7 @@ namespace UnityEngine.Rendering.HighDefinition
                 FillWaterSurfaceProfile(hdCamera, settings, currentWater, surfaceIdx);
 
                 // Render the water surface
-                RenderWaterSurfaceGBuffer(renderGraph, hdCamera, currentWater, settings, surfaceIdx,
-                                depthBuffer, WaterGbuffer0, WaterGbuffer1, WaterGbuffer2);
-
+                RenderWaterSurfaceGBuffer(renderGraph, hdCamera, currentWater, settings, surfaceIdx, surfaceIdx == m_UnderWaterSurfaceIndex, depthBuffer, WaterGbuffer0, WaterGbuffer1, WaterGbuffer2);
             }
 
             using (var builder = renderGraph.AddRenderPass<WaterRenderingSSRData>("Prepare water for SSR", out var passData, ProfilingSampler.Get(HDProfileId.WaterSurfaceRenderingSSR)))
@@ -984,7 +981,7 @@ namespace UnityEngine.Rendering.HighDefinition
                 FillWaterSurfaceProfile(hdCamera, settings, currentWater, surfaceIdx);
 
                 // Render the water surface
-                RenderWaterSurfaceGBuffer(renderGraph, hdCamera, currentWater, settings, surfaceIdx, depthBuffer, WaterGbuffer0, colorBuffer, WaterGbuffer2);
+                RenderWaterSurfaceGBuffer(renderGraph, hdCamera, currentWater, settings, surfaceIdx, false, depthBuffer, WaterGbuffer0, colorBuffer, WaterGbuffer2);
             }
         }
 
@@ -1001,7 +998,6 @@ namespace UnityEngine.Rendering.HighDefinition
             public ComputeBufferHandle waterSurfaceProfiles;
             public TextureHandle scatteringFallbackTexture;
             public TextureHandle volumetricLightingTexture;
-            public ComputeBufferHandle cameraElevationBuffer;
 
             // Water rendered to this buffer
             public TextureHandle colorBuffer;
@@ -1031,7 +1027,7 @@ namespace UnityEngine.Rendering.HighDefinition
                 passData.waterSurfaceProfiles = builder.ReadComputeBuffer(renderGraph.ImportComputeBuffer(m_WaterProfileArrayGPU));
                 passData.scatteringFallbackTexture = renderGraph.defaultResources.blackTexture3DXR;
                 passData.volumetricLightingTexture = builder.ReadTexture(volumetricLightingTexture);
-                passData.cameraElevationBuffer = builder.ReadComputeBuffer(renderGraph.ImportComputeBuffer(m_WaterHeightBuffer));
+
                 // Request the output textures
                 passData.colorBuffer = builder.WriteTexture(colorBuffer);
 
@@ -1060,7 +1056,6 @@ namespace UnityEngine.Rendering.HighDefinition
                         ctx.cmd.SetComputeTextureParam(data.parameters.waterLighting, data.parameters.waterLightingKernel, HDShaderIDs._DepthTexture, data.depthBuffer);
                         ctx.cmd.SetComputeTextureParam(data.parameters.waterLighting, data.parameters.waterLightingKernel, HDShaderIDs._StencilTexture, data.depthBuffer, 0, RenderTextureSubElement.Stencil);
                         ctx.cmd.SetComputeTextureParam(data.parameters.waterLighting, data.parameters.waterLightingKernel, HDShaderIDs._VBufferLighting, data.volumetricLightingTexture);
-                        ctx.cmd.SetComputeBufferParam(data.parameters.waterLighting, data.parameters.waterLightingKernel, "_WaterHeightBuffer", data.cameraElevationBuffer);
 
                         // Bind the output texture
                         ctx.cmd.SetComputeTextureParam(data.parameters.waterLighting, data.parameters.waterLightingKernel, HDShaderIDs._CameraColorTextureRW, data.colorBuffer);

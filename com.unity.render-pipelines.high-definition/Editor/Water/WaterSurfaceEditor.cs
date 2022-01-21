@@ -74,6 +74,13 @@ namespace UnityEditor.Rendering.HighDefinition
         SerializedProperty m_DecalLayerMask;
         SerializedProperty m_LightLayerMask;
 
+        // Underwater
+        SerializedProperty m_UnderWater;
+        SerializedProperty m_VolumeBounds;
+        SerializedProperty m_VolumeDepth;
+        SerializedProperty m_VolumePriority;
+        SerializedProperty m_TransitionSize;
+
         void OnEnable()
         {
             var o = new PropertyFetcher<WaterSurface>(serializedObject);
@@ -145,6 +152,13 @@ namespace UnityEditor.Rendering.HighDefinition
             // Rendering
             m_DecalLayerMask = o.Find(x => x.decalLayerMask);
             m_LightLayerMask = o.Find(x => x.lightLayerMask);
+
+            // Underwater
+            m_UnderWater = o.Find(x => x.underWater);
+            m_VolumeBounds = o.Find(x => x.volumeBounds);
+            m_VolumeDepth = o.Find(x => x.volumeDepth);
+            m_VolumePriority = o.Find(x => x.volumePrority);
+            m_TransitionSize = o.Find(x => x.transitionSize);
         }
 
         static public readonly GUIContent k_Amplitude = EditorGUIUtility.TrTextContent("Amplitude", "Sets the normalized (between 0.0 and 1.0) amplitude of each simulation band (from lower to higher frequencies).");
@@ -389,6 +403,22 @@ namespace UnityEditor.Rendering.HighDefinition
                     HDEditorUtils.QualitySettingsHelpBox("Enable 'Light Layers' in your HDRP Asset if you want defined which lights affect water surfaces. There is a performance cost of enabling this option.",
                         MessageType.Info, HDRenderPipelineUI.Expandable.Lighting, "m_RenderPipelineSettings.supportLightLayers");
                     EditorGUILayout.Space();
+                }
+            }
+
+            // Under Water Rendering
+            EditorGUILayout.LabelField("Underwater", EditorStyles.boldLabel);
+            using (new IndentLevelScope())
+            {
+                EditorGUILayout.PropertyField(m_UnderWater);
+                if (m_UnderWater.boolValue)
+                {
+                    if (!m_Infinite.boolValue)
+                        EditorGUILayout.PropertyField(m_VolumeBounds);
+                    else
+                        EditorGUILayout.PropertyField(m_VolumeDepth);
+                    EditorGUILayout.PropertyField(m_VolumePriority);
+                    EditorGUILayout.PropertyField(m_TransitionSize);
                 }
             }
             serializedObject.ApplyModifiedProperties();

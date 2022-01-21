@@ -1,5 +1,6 @@
 #pragma kernel WaterPrepareSSR
 #pragma kernel WaterDeferredLighting
+#pragma kernel UnderWater
 
 // Given that the algorithm requires BSDF evaluation, we need to define this macro
 #define HAS_LIGHTLOOP
@@ -17,7 +18,7 @@
 
 #pragma only_renderers d3d11 playstation xboxone xboxseries vulkan metal
 
-// #pragma enable_d3d11_debug_symbols
+#pragma enable_d3d11_debug_symbols
 
 // HDRP generic includes
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
@@ -72,7 +73,6 @@ void WaterPrepareSSR(uint3 dispatchThreadId : SV_DispatchThreadID, uint2 groupTh
     _NormalBufferRW[COORD_TEXTURE2D_X(currentCoord)] = outputNormalData;
 }
 
-StructuredBuffer<float> _WaterHeightBuffer;
 
 [numthreads(8, 8, 1)]
 void WaterDeferredLighting(uint3 dispatchThreadId : SV_DispatchThreadID, uint2 groupThreadId : SV_GroupThreadID, uint2 groupId : SV_GroupID)
@@ -89,66 +89,93 @@ void WaterDeferredLighting(uint3 dispatchThreadId : SV_DispatchThreadID, uint2 g
     uint2 tileCoord = currentCoord / GetTileSize();
     PositionInputs posInput = GetPositionInput(currentCoord, _ScreenSize.zw, depthValue, UNITY_MATRIX_I_VP, GetWorldToViewMatrix(), tileCoord);
 
-    bool underWater = _WorldSpaceCameraPos.y < _WaterHeightBuffer[0];
-
     // Is this a water pixel?
     uint stencilValue = GetStencilValue(LOAD_TEXTURE2D_X(_StencilTexture, currentCoord));
-    if ((stencilValue & 16) != 0)
+    if ((stencilValue & 16) ==  0)
+        return;
+    // Compute the view vector
+    float3 V = GetWorldSpaceNormalizeViewDir(posInput.positionWS);
+
+    // Read the bsdf data and builtin data from the gbuffer
+    BSDFData bsdfData;
+    ZERO_INITIALIZE(BSDFData, bsdfData);
+
+    BuiltinData builtinData;
+    ZERO_INITIALIZE(BuiltinData, builtinData);
+
+    // Decode the water data from the gbuffer
+    DecodeFromGBuffer(currentCoord, bsdfData, builtinData);
+
+    // Compute the prelight data
+    PreLightData preLightData = GetPreLightData(V, posInput, bsdfData);
+
+    // Evaluate the light loop
+    uint  featureFlags = UINT_MAX;
+    LightLoopOutput lightLoopOutput;
+    LightLoop(V, posInput, preLightData, bsdfData, builtinData, featureFlags, lightLoopOutput);
+
+    // Alias
+    float3 diffuseLighting = lightLoopOutput.diffuseLighting;
+    float3 specularLighting = lightLoopOutput.specularLighting;
+
+    // Apply the exposure
+    diffuseLighting *= GetCurrentExposureMultiplier();
+    specularLighting *= GetCurrentExposureMultiplier();
+
+    // Combine both lighting terms
+    float3 finalColor = (diffuseLighting + specularLighting);
+
+    // Evaluate the fog and combine
+    float3 volColor, volOpacity;
+    EvaluateAtmosphericScattering(posInput, V, volColor, volOpacity);
+    finalColor = finalColor * (1 - volOpacity) + volColor;
+
+    // Output to the color buffer
+    _CameraColorTextureRW[COORD_TEXTURE2D_X(currentCoord)] = float4(finalColor, 1.0);
+}
+
+// Input color value
+TEXTURE2D_X(_CameraColorTexture);
+StructuredBuffer<float> _WaterCameraHeightBuffer;
+
+float4 _WaterRefractionColor;
+float _OutScatteringCoeff;
+float _MaxAbsorptionDistance;
+float _WaterTransitionSize;
+
+[numthreads(8, 8, 1)]
+void UnderWater(uint3 dispatchThreadId : SV_DispatchThreadID, uint2 groupThreadId : SV_GroupThreadID, uint2 groupId : SV_GroupID)
+{
+    UNITY_XR_ASSIGN_VIEW_INDEX(dispatchThreadId.z);
+
+    // Compute the pixel position to process
+    uint2 currentCoord = groupId * 8 + groupThreadId;
+
+    // Read the color buffer
+    float4 camColor = LOAD_TEXTURE2D_X(_CameraColorTexture, currentCoord);
+
+    // Grab the transition region
+    float blendDistance = _ProjectionParams.y * _WaterTransitionSize;
+
+    // If the camera is under the water plane
+    if (_WorldSpaceCameraPos.y - _WaterCameraHeightBuffer[0] > blendDistance)
     {
-        // Compute the view vector
-        float3 V = GetWorldSpaceNormalizeViewDir(posInput.positionWS);
-
-        // Read the bsdf data and builtin data from the gbuffer
-        BSDFData bsdfData;
-        ZERO_INITIALIZE(BSDFData, bsdfData);
-
-        BuiltinData builtinData;
-        ZERO_INITIALIZE(BuiltinData, builtinData);
-
-        // Decode the water data from the gbuffer
-        DecodeFromGBuffer(currentCoord, bsdfData, builtinData);
-
-        if (underWater)
-        {
-            bsdfData.diffuseColor = 0.125;
-            bsdfData.foam = 0.0;
-        }
-
-        // Compute the prelight data
-        PreLightData preLightData = GetPreLightData(V, posInput, bsdfData);
-
-        // Evaluate the light loop
-        uint  featureFlags = UINT_MAX;
-        LightLoopOutput lightLoopOutput;
-        LightLoop(V, posInput, preLightData, bsdfData, builtinData, featureFlags, lightLoopOutput);
-
-        // Alias
-        float3 diffuseLighting = lightLoopOutput.diffuseLighting;
-        float3 specularLighting = lightLoopOutput.specularLighting;
-
-        // Apply the exposure
-        diffuseLighting *= GetCurrentExposureMultiplier();
-        specularLighting *= GetCurrentExposureMultiplier();
-
-        // Combine both lighting terms
-        float3 finalColor = (diffuseLighting + specularLighting);
-
-        // Evaluate the fog and combine
-        float3 volColor, volOpacity;
-        EvaluateAtmosphericScattering(posInput, V, volColor, volOpacity);
-        finalColor = finalColor * (1 - volOpacity) + volColor;
-
-        if (underWater)
-            finalColor *= 0.5;
-        _CameraColorTextureRW[COORD_TEXTURE2D_X(currentCoord)] = float4(finalColor, 1.0);
+        _CameraColorTextureRW[COORD_TEXTURE2D_X(currentCoord)] = camColor;
+        return;
     }
 
-    float3 camColor = _CameraColorTextureRW[COORD_TEXTURE2D_X(currentCoord)];
-    if (_WorldSpaceCameraPos.y < _WaterHeightBuffer[0])
-    {
-        float depth = depthValue == UNITY_RAW_FAR_CLIP_VALUE ? 1000.0 : length(posInput.positionWS);
-        float fog = saturate(1 - (1000 - depth) / (1000));
-        float3 color = camColor * float3(0.1, 0.3, 0.5);
-        _CameraColorTextureRW[COORD_TEXTURE2D_X(currentCoord)] = float4(lerp(color, float3(0.1, 0.3, 0.5) * 0.5, sqrt(fog)), 1.0);
-    }
+    float distanceToSurface = saturate((_WorldSpaceCameraPos.y - _WaterCameraHeightBuffer[0]) / blendDistance);
+
+    // Read the depth value
+    float depthValue = LOAD_TEXTURE2D_X(_DepthTexture, currentCoord).x;
+    PositionInputs posInput = GetPositionInput(currentCoord, _ScreenSize.zw, depthValue, UNITY_MATRIX_I_VP, GetWorldToViewMatrix(), 0);
+
+    // Evaluate the fog of the target surface
+    float cameraDistance = depthValue == UNITY_RAW_FAR_CLIP_VALUE ? _MaxAbsorptionDistance : length(posInput.positionWS);
+
+    // Apply the fog tot he result and we are done for now
+    float bedDistance = abs(posInput.positionWS.y + _WorldSpaceCameraPos.y);
+    float3 cameraToBedAbsorption = exp(-_OutScatteringCoeff * cameraDistance * (1.0 -_WaterRefractionColor.xyz));
+    float3 color = camColor.xyz * lerp(cameraToBedAbsorption, 1.0, distanceToSurface * distanceToSurface);
+    _CameraColorTextureRW[COORD_TEXTURE2D_X(currentCoord)] = float4(color, 1.0);
 }

@@ -132,14 +132,13 @@ void CopyAdditionalData(uint3 currentThread : SV_DispatchThreadID)
 }
 
 // The set of input position we need to process
-StructuredBuffer<float3> _InputPositionsBuffer;
-RWStructuredBuffer<float> _OutputHeightBuffer;
+RWStructuredBuffer<float> _WaterCameraHeightBufferRW;
 
 // We allow up to 10 steps to figure out the height of the point
-#define SEARCH_ITERATION_COUNT 12
+#define SEARCH_ITERATION_COUNT 16
 
 // We consider that we found the point if we were able to 
-#define SEARCH_DISTANCE_THRESHOLD 0.005
+#define SEARCH_DISTANCE_THRESHOLD 0.001
 
 struct TapData
 {
@@ -181,7 +180,7 @@ void FindVerticalDisplacements(uint3 currentThread : SV_DispatchThreadID)
     uint coord = currentThread.x;
 
     // The point we will be looking for
-    float3 targetPosition = _InputPositionsBuffer[coord];
+    float3 targetPosition = _WorldSpaceCameraPos.xyz;
 
     // Initialize the search data
     bool found = false;
@@ -235,10 +234,10 @@ void FindVerticalDisplacements(uint3 currentThread : SV_DispatchThreadID)
         stepCount++;
     }
 
-    _OutputHeightBuffer[4 * coord] = currentHeight;
-    _OutputHeightBuffer[4 * coord + 1] = currentDistance;
-    _OutputHeightBuffer[4 * coord + 2] = stepCount;
-    _OutputHeightBuffer[4 * coord + 3] = 0.0;
+    _WaterCameraHeightBufferRW[4 * coord] = currentHeight;
+    _WaterCameraHeightBufferRW[4 * coord + 1] = currentDistance;
+    _WaterCameraHeightBufferRW[4 * coord + 2] = stepCount;
+    _WaterCameraHeightBufferRW[4 * coord + 3] = 0.0;
 }
 
 // Output indices for the caustics buffer
