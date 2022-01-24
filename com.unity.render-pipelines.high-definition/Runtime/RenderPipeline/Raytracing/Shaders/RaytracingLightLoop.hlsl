@@ -12,6 +12,7 @@ void LightLoop( float3 V, PositionInputs posInput, PreLightData preLightData, BS
 
     LightLoopContext context;
     context.contactShadow    = 1.0;
+    context.positionWS       = posInput.positionWS;
     context.shadowContext    = InitShadowContext();
     context.shadowValue      = 1.0;
     context.splineVisibility = -1;

@@ -18,6 +18,7 @@ struct HDShadowContext { float unused; };
 struct LightLoopContext
 {
     int sampleReflection;
+    float3 positionWS;
 
     HDShadowContext shadowContext;
 
@@ -164,6 +165,21 @@ float4 SampleEnv(LightLoopContext lightLoopContext, int index, float3 texCoord, 
         color.rgb = SampleSkyTexture(texCoord, lod, sliceIdx).rgb;
         // Sky isn't pre-expose, so best to clamp to max16 here in case of inf
         color.rgb = ClampToFloat16Max(color.rgb);
+
+#ifdef UNITY_ATMOSPHERIC_SCATTERING_INCLUDED
+        // Apply fog between pixel position and skybox
+        float3 positionWS = lightLoopContext.positionWS.y;
+        float  startHeight = positionWS.y;
+        float  cosZenith = texCoord.y;
+
+        float3 volAlbedo = _HeightFogBaseScattering.xyz / _HeightFogBaseExtinction;
+        float  odFallback = OpticalDepthHeightFog(_HeightFogBaseExtinction, _HeightFogBaseHeight,
+                _HeightFogExponents, cosZenith, startHeight);
+        float  trFallback = TransmittanceFromOpticalDepth(odFallback);
+
+        float3 fog = GetFogColor(-texCoord, _MaxFogDistance) * volAlbedo * (1 - trFallback);
+        color.rgb = color.rgb * trFallback + fog;
+#endif
     }
 
 
