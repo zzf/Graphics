@@ -1269,6 +1269,8 @@ namespace UnityEngine.Rendering.HighDefinition
                 }
 #endif
 
+                RTHandles.SetHardwareDynamicResolutionState(m_Asset.currentPlatformRenderPipelineSettings.dynamicResolutionSettings.dynResType == DynamicResolutionType.Hardware);
+
                 // Culling loop
                 foreach ((Camera camera, XRPass xrPass) in multipassCameras)
                 {
@@ -1321,8 +1323,6 @@ namespace UnityEngine.Rendering.HighDefinition
 
                     dynResHandler.SetCurrentCameraRequest(cameraRequestedDynamicRes);
                     dynResHandler.runUpscalerFilterOnFullResolution = (hdCam != null && hdCam.cameraCanRenderDLSS) || DynamicResolutionHandler.instance.filter == DynamicResUpscaleFilter.TAAU;
-
-                    RTHandles.SetHardwareDynamicResolutionState(dynResHandler.HardwareDynamicResIsEnabled());
 
                     // Reset pooled variables
                     cameraSettings.Clear();
