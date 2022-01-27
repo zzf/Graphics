@@ -21,23 +21,26 @@ public class BakeAPV : MonoBehaviour
 
     static BakeAPV()
     {
-        using StreamWriter file = new(Application.dataPath + "/file.txt", append: true);
-        file.WriteLine("static constructor");
+        Debug.Log("static constructor");
 
         Lightmapping.bakeStarted += BakeStarted;
     }
 
     private void OnDestroy()
     {
-        using StreamWriter file = new(Application.dataPath + "/file.txt", append: true);
-        file.WriteLine("on destroy");
+        Debug.Log("on destroy");
+    }
+
+    private void OnDisable()
+    {
+        Debug.Log("on disable");
     }
 
     static void BakeStarted()
     {
-        using StreamWriter file = new(Application.dataPath + "/file.txt", append: true);
-        file.WriteLine("bake started");
+        Debug.Log("bake started");
 
+        Debug.Log(FindObjectOfType<BakeAPV>());
         if (FindObjectOfType<BakeAPV>() == null)
             return;
 
@@ -45,6 +48,7 @@ public class BakeAPV : MonoBehaviour
         for (int i = 0; i < SceneManager.sceneCount; i++)
         {
             var scene = SceneManager.GetSceneAt(i);
+            Debug.Log(scene.path);
             if (scene.buildIndex != -1)
                 scenesToBake.Add(scene.path);
         }
@@ -54,8 +58,7 @@ public class BakeAPV : MonoBehaviour
     static void BakeScenes()
     {
         var pipe = (RenderPipelineManager.currentPipeline as HDRenderPipeline);
-        using StreamWriter file = new(Application.dataPath + "/file.txt", append: true);
-        file.WriteLine("Bake " + pipe != null);
+        Debug.Log(pipe != null ? "BakeScenes" : "failure");
         Debug.Assert(pipe != null);
         Scene trScene = EditorSceneManager.GetSceneAt(0);
 
