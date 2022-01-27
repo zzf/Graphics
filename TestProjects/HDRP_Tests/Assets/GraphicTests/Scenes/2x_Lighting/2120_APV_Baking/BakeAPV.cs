@@ -5,6 +5,7 @@ using UnityEngine.Rendering.HighDefinition;
 using UnityEngine.SceneManagement;
 using UnityEditor.SceneManagement;
 using System.Collections.Generic;
+using System.IO;
 
 [InitializeOnLoad]
 public class BakeAPV : MonoBehaviour
@@ -20,11 +21,23 @@ public class BakeAPV : MonoBehaviour
 
     static BakeAPV()
     {
+        using StreamWriter file = new(Application.dataPath + "/file.txt", append: true);
+        file.WriteLine("static constructor");
+
         Lightmapping.bakeStarted += BakeStarted;
+    }
+
+    private void OnDestroy()
+    {
+        using StreamWriter file = new(Application.dataPath + "/file.txt", append: true);
+        file.WriteLine("on destroy");
     }
 
     static void BakeStarted()
     {
+        using StreamWriter file = new(Application.dataPath + "/file.txt", append: true);
+        file.WriteLine("bake started");
+
         if (FindObjectOfType<BakeAPV>() == null)
             return;
 
@@ -41,6 +54,8 @@ public class BakeAPV : MonoBehaviour
     static void BakeScenes()
     {
         var pipe = (RenderPipelineManager.currentPipeline as HDRenderPipeline);
+        using StreamWriter file = new(Application.dataPath + "/file.txt", append: true);
+        file.WriteLine("Bake " + pipe != null);
         Debug.Assert(pipe != null);
         Scene trScene = EditorSceneManager.GetSceneAt(0);
 
